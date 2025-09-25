@@ -484,6 +484,255 @@ def validate_sales_order_data(sales_order_data):
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist(allow_guest=True)
+def get_customer_email(customer_name):
+    """Get customer email from multiple sources"""
+    try:
+        if not customer_name:
+            return {"success": False, "message": "Customer name is required"}
+        
+        customer_email = None
+        
+        # Method 1: Check if customer has direct email_id field
+        customer_doc = frappe.get_doc("Customer", customer_name)
+        if hasattr(customer_doc, 'email_id') and customer_doc.email_id:
+            customer_email = customer_doc.email_id
+        
+        # Method 2: Get from linked contacts (check email_ids child table)
+        if not customer_email:
+            contacts = frappe.get_all(
+                "Dynamic Link",
+                fields=["parent"],
+                filters={
+                    "link_doctype": "Customer",
+                    "link_name": customer_name,
+                    "parenttype": "Contact"
+                }
+            )
+            
+            for contact_link in contacts:
+                contact_doc = frappe.get_doc("Contact", contact_link.parent)
+                # Check email_ids child table first
+                if contact_doc.email_ids:
+                    for email_row in contact_doc.email_ids:
+                        if email_row.email_id:
+                            customer_email = email_row.email_id
+                            break
+                # Fallback to direct email_id field
+                elif hasattr(contact_doc, 'email_id') and contact_doc.email_id:
+                    customer_email = contact_doc.email_id
+                
+                if customer_email:
+                    break
+        
+        # Method 3: Direct query from Contact Email child table
+        if not customer_email:
+            contact_emails = frappe.db.sql("""
+                SELECT ce.email_id 
+                FROM `tabContact Email` ce
+                INNER JOIN `tabContact` c ON c.name = ce.parent
+                INNER JOIN `tabDynamic Link` dl ON dl.parent = c.name
+                WHERE dl.link_doctype = 'Customer' 
+                AND dl.link_name = %s 
+                AND ce.email_id IS NOT NULL 
+                AND ce.email_id != ''
+                ORDER BY ce.is_primary DESC, c.creation DESC
+                LIMIT 1
+            """, (customer_name,))
+            
+            if contact_emails:
+                customer_email = contact_emails[0][0]
+        
+        if customer_email:
+            return {"success": True, "email": customer_email}
+        else:
+            return {"success": False, "message": "No email found for this customer"}
+            
+    except Exception as e:
+        frappe.log_error(f"Error getting customer email: {str(e)}", "Sales Order Form - Get Customer Email")
+        return {"success": False, "message": str(e)}
+
+@frappe.whitelist(allow_guest=True)
+def send_sales_order_email(sales_order_name, customer_name=None, customer_email=None):
+    """Send Sales Order PDF via email"""
+    try:
+        if not sales_order_name:
+            return {"success": False, "message": "Sales Order name is required"}
+        
+        # If no email provided, try to get it from customer
+        if not customer_email and customer_name:
+            email_result = get_customer_email(customer_name)
+            if email_result.get("success"):
+                customer_email = email_result.get("email")
+            else:
+                return {"success": False, "message": "Customer email not found. Please add email to customer master data."}
+        
+        if not customer_email:
+            return {"success": False, "message": "Customer email is required"}
+        
+        # Check if Sales Order exists
+        if not frappe.db.exists("Sales Order", sales_order_name):
+            return {"success": False, "message": "Sales Order not found"}
+        
+        # Get Sales Order document
+        sales_order = frappe.get_doc("Sales Order", sales_order_name)
+        
+        # Prepare email content
+        subject = f"Sales Order {sales_order_name} - {sales_order.customer_name}"
+        message = f"""
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #2c5aa0;">Sales Order Confirmation</h2>
+            <p>Dear {sales_order.customer_name},</p>
+            <p>Thank you for your order! Please find attached your Sales Order <strong>{sales_order_name}</strong>.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #2c5aa0;">Order Summary:</h3>
+                <p><strong>Order Date:</strong> {sales_order.transaction_date}</p>
+                <p><strong>Total Amount:</strong> {sales_order.currency} {sales_order.grand_total:,.2f}</p>
+                {f"<p><strong>Delivery Date:</strong> {sales_order.delivery_date}</p>" if sales_order.delivery_date else ""}
+            </div>
+            
+            <p>If you have any questions about your order, please don't hesitate to contact us.</p>
+            
+            <p>Thank you for your business!</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="margin: 0;"><strong>Sage Services Co Ltd.</strong></p>
+                <p style="margin: 5px 0; color: #666;">Your trusted business partner</p>
+            </div>
+        </div>
+        """
+        
+        # Create communication record and send email
+        from frappe.core.doctype.communication.email import make
+        
+        # Simple email sending with proper permissions
+        try:
+            # Temporarily switch to Administrator to send email
+            original_user = frappe.session.user
+            frappe.set_user("Administrator")
+            
+            # Generate PDF
+            pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+            
+            # Send email using frappe.sendmail with proper context
+            frappe.sendmail(
+                recipients=[customer_email],
+                subject=subject,
+                message=message,
+                reference_doctype="Sales Order",
+                reference_name=sales_order_name,
+                attachments=[{
+                    "fname": f"{sales_order_name}.pdf",
+                    "fcontent": pdf_content
+                }]
+            )
+            
+            # Switch back to original user
+            frappe.set_user(original_user)
+            
+        except Exception as email_error:
+            # Ensure we switch back to original user even if there's an error
+            frappe.set_user(original_user if 'original_user' in locals() else "Guest")
+            raise Exception(f"Email sending failed: {str(email_error)}")
+        
+        return {
+            "success": True,
+            "message": f"Sales Order PDF has been sent to {customer_email}"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error sending sales order email: {str(e)}", "Sales Order Form - Send Email")
+        return {"success": False, "message": f"Error sending email: {str(e)}"}
+
+@frappe.whitelist(allow_guest=True)
+def test_email_retrieval(customer_name):
+    """Simple test to check if we can find customer email"""
+    try:
+        email_result = get_customer_email(customer_name)
+        return {
+            "success": True,
+            "customer_name": customer_name,
+            "email_found": email_result.get("success", False),
+            "email_address": email_result.get("email", "Not found"),
+            "message": email_result.get("message", "")
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@frappe.whitelist(allow_guest=True)
+def debug_customer_email(customer_name):
+    """Debug method to check customer email retrieval"""
+    try:
+        result = {
+            "customer_name": customer_name,
+            "methods_tried": [],
+            "email_found": None
+        }
+        
+        # Method 1: Direct customer email
+        try:
+            customer_doc = frappe.get_doc("Customer", customer_name)
+            if hasattr(customer_doc, 'email_id') and customer_doc.email_id:
+                result["methods_tried"].append(f"Direct customer email: {customer_doc.email_id}")
+                result["email_found"] = customer_doc.email_id
+        except Exception as e:
+            result["methods_tried"].append(f"Direct customer email failed: {str(e)}")
+        
+        # Method 2: Dynamic Link approach
+        try:
+            contacts = frappe.get_all(
+                "Dynamic Link",
+                fields=["parent"],
+                filters={
+                    "link_doctype": "Customer",
+                    "link_name": customer_name,
+                    "parenttype": "Contact"
+                }
+            )
+            result["methods_tried"].append(f"Found {len(contacts)} contact links")
+            
+            for contact_link in contacts:
+                contact_doc = frappe.get_doc("Contact", contact_link.parent)
+                # Check email_ids child table
+                if contact_doc.email_ids:
+                    for email_row in contact_doc.email_ids:
+                        result["methods_tried"].append(f"Contact {contact_link.parent} email_ids: {email_row.email_id} (primary: {email_row.is_primary})")
+                        if email_row.email_id and not result["email_found"]:
+                            result["email_found"] = email_row.email_id
+                # Check direct email field
+                if hasattr(contact_doc, 'email_id') and contact_doc.email_id:
+                    result["methods_tried"].append(f"Contact {contact_link.parent} direct email: {contact_doc.email_id}")
+                    if not result["email_found"]:
+                        result["email_found"] = contact_doc.email_id
+        except Exception as e:
+            result["methods_tried"].append(f"Dynamic Link approach failed: {str(e)}")
+        
+        # Method 3: Direct SQL query from child table
+        try:
+            contact_emails = frappe.db.sql("""
+                SELECT c.name, ce.email_id, ce.is_primary
+                FROM `tabContact Email` ce
+                INNER JOIN `tabContact` c ON c.name = ce.parent
+                INNER JOIN `tabDynamic Link` dl ON dl.parent = c.name
+                WHERE dl.link_doctype = 'Customer' 
+                AND dl.link_name = %s 
+                ORDER BY ce.is_primary DESC, c.creation DESC
+            """, (customer_name,), as_dict=True)
+            
+            result["methods_tried"].append(f"SQL query found {len(contact_emails)} contact emails")
+            for contact in contact_emails:
+                result["methods_tried"].append(f"SQL Contact {contact.name}: email={contact.email_id} (primary: {contact.is_primary})")
+                if contact.email_id and not result["email_found"]:
+                    result["email_found"] = contact.email_id
+        except Exception as e:
+            result["methods_tried"].append(f"SQL query failed: {str(e)}")
+        
+        return {"success": True, "debug_info": result}
+        
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@frappe.whitelist(allow_guest=True)
 def create_customer(customer_data):
     """Create a new customer in ERPNext"""
     try:
@@ -527,30 +776,53 @@ def create_customer(customer_data):
             address.insert(ignore_permissions=True)
         
         # Create contact if contact information is provided
+        contact_created = False
         if any([customer_data.get("mobile_no"), customer_data.get("email_id")]):
-            contact = frappe.new_doc("Contact")
-            contact.first_name = customer.customer_name
-            contact.mobile_no = customer_data.get("mobile_no", "")
-            contact.email_id = customer_data.get("email_id", "")
-            
-            # Link contact to customer
-            contact.append("links", {
-                "link_doctype": "Customer",
-                "link_name": customer.name
-            })
-            
-            contact.insert(ignore_permissions=True)
+            try:
+                contact = frappe.new_doc("Contact")
+                contact.first_name = customer.customer_name
+                
+                # Add email to email_ids child table (not direct email_id field)
+                if customer_data.get("email_id"):
+                    contact.append("email_ids", {
+                        "email_id": customer_data.get("email_id"),
+                        "is_primary": 1
+                    })
+                
+                # Add phone to phone_nos child table
+                if customer_data.get("mobile_no"):
+                    contact.append("phone_nos", {
+                        "phone": customer_data.get("mobile_no"),
+                        "is_primary_mobile_no": 1
+                    })
+                
+                # Link contact to customer
+                contact.append("links", {
+                    "link_doctype": "Customer",
+                    "link_name": customer.name
+                })
+                
+                contact.insert(ignore_permissions=True)
+                contact_created = True
+                
+                frappe.log_error(f"Contact created successfully for customer {customer.name}: {contact.name} with email {customer_data.get('email_id')}", "Customer Creation Debug")
+                
+            except Exception as contact_error:
+                frappe.log_error(f"Error creating contact for customer {customer.name}: {str(contact_error)}", "Customer Creation - Contact Error")
+                # Don't fail the entire customer creation if contact fails
         
         return {
             "success": True,
-            "message": f"Customer {customer.name} created successfully!",
+            "message": f"Customer {customer.name} created successfully!" + (f" Contact created: {contact_created}" if contact_created else " No contact created"),
             "customer_name": customer.customer_name,
             "data": {
                 "name": customer.name,
                 "customer_name": customer.customer_name,
                 "customer_type": customer.customer_type,
                 "customer_group": customer.customer_group,
-                "territory": customer.territory
+                "territory": customer.territory,
+                "contact_created": contact_created,
+                "email_provided": customer_data.get("email_id", "")
             }
         }
         

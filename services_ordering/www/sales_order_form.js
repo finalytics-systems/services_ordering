@@ -77,6 +77,10 @@ frappe.ready(function() {
 					const items = ref([]);
 					const loading = ref(false);
 					const saving = ref(false);
+					const sendingEmail = ref(false);
+					const lastCreatedSalesOrder = ref(null);
+					const showSuccessMessage = ref(false);
+					const successMessage = ref('');
 					const customers = ref([]);
 					const companies = ref([]);
 					const territories = ref([]);
@@ -286,23 +290,31 @@ frappe.ready(function() {
 							});
 
 							if (response.message) {
-								frappe.msgprint({
-									title: 'Success',
-									message: `Sales Order ${response.message.name} created successfully!`,
-									indicator: 'green'
-								});
+								lastCreatedSalesOrder.value = response.message;
 								
-								// Reset form
-								resetForm();
+								// Show custom success message instead of frappe.msgprint
+								successMessage.value = `Sales Order ${response.message.name} created successfully!`;
+								showSuccessMessage.value = true;
+								
+								// Auto-hide success message after 5 seconds
+								setTimeout(() => {
+									showSuccessMessage.value = false;
+								}, 5000);
+								
+								// Don't reset form - let user decide when to reset
 							}
 
 						} catch (error) {
 							console.error('Error saving sales order:', error);
-							frappe.msgprint({
-								title: 'Error',
-								message: 'Error creating sales order: ' + error.message,
-								indicator: 'red'
-							});
+							
+							// Show custom error message instead of frappe.msgprint
+							successMessage.value = 'Error creating sales order: ' + error.message;
+							showSuccessMessage.value = true;
+							
+							// Auto-hide error message after 5 seconds
+							setTimeout(() => {
+								showSuccessMessage.value = false;
+							}, 5000);
 						} finally {
 							saving.value = false;
 						}
@@ -344,6 +356,103 @@ frappe.ready(function() {
 							contact_email: ''
 						};
 						items.value = [];
+						lastCreatedSalesOrder.value = null;
+						showSuccessMessage.value = false;
+					};
+
+					// Send Email with PDF
+					const sendEmail = async () => {
+						try {
+							sendingEmail.value = true;
+							
+							if (!lastCreatedSalesOrder.value) {
+								frappe.msgprint('No Sales Order to send. Please create a Sales Order first.');
+								return;
+							}
+
+							if (!salesOrder.value.customer) {
+								frappe.msgprint('Customer information is missing.');
+								return;
+							}
+
+							// Get customer email
+							const customerResponse = await frappe.call({
+								method: "frappe.client.get",
+								args: {
+									doctype: "Customer",
+									name: salesOrder.value.customer
+								}
+							});
+
+							let customerEmail = '';
+							if (customerResponse.message && customerResponse.message.email_id) {
+								customerEmail = customerResponse.message.email_id;
+							} else {
+								// Try to get email from contact
+								const contactResponse = await frappe.call({
+									method: "frappe.client.get_list",
+									args: {
+										doctype: "Contact",
+										filters: [["Dynamic Link", "link_doctype", "=", "Customer"], ["Dynamic Link", "link_name", "=", salesOrder.value.customer]],
+										fields: ["email_id"],
+										limit_page_length: 1
+									}
+								});
+								
+								if (contactResponse.message && contactResponse.message.length > 0 && contactResponse.message[0].email_id) {
+									customerEmail = contactResponse.message[0].email_id;
+								}
+							}
+
+							if (!customerEmail) {
+								frappe.msgprint('Customer email not found. Please add email to customer master data.');
+								return;
+							}
+
+							// Send email with PDF attachment
+							const emailResponse = await frappe.call({
+								method: "frappe.core.doctype.communication.email.make",
+								args: {
+									recipients: customerEmail,
+									subject: `Sales Order ${lastCreatedSalesOrder.value.name} - ${salesOrder.value.customer_name}`,
+									content: `Dear ${salesOrder.value.customer_name},<br><br>
+										Please find attached your Sales Order ${lastCreatedSalesOrder.value.name}.<br><br>
+										Thank you for your business!<br><br>
+										Best regards,<br>
+										${salesOrder.value.company}`,
+									doctype: "Sales Order",
+									name: lastCreatedSalesOrder.value.name,
+									send_email: 1,
+									print_format: "Standard",
+									attach_document_print: 1
+								}
+							});
+
+							if (emailResponse.message) {
+								// Show custom success message instead of frappe.msgprint
+								successMessage.value = `Sales Order PDF has been sent to ${customerEmail}`;
+								showSuccessMessage.value = true;
+								
+								// Auto-hide success message after 5 seconds
+								setTimeout(() => {
+									showSuccessMessage.value = false;
+								}, 5000);
+							}
+
+						} catch (error) {
+							console.error('Error sending email:', error);
+							
+							// Show custom error message instead of frappe.msgprint
+							successMessage.value = 'Error sending email: ' + error.message;
+							showSuccessMessage.value = true;
+							
+							// Auto-hide error message after 5 seconds
+							setTimeout(() => {
+								showSuccessMessage.value = false;
+							}, 5000);
+						} finally {
+							sendingEmail.value = false;
+						}
 					};
 
 					// Handle customer selection
@@ -405,6 +514,10 @@ frappe.ready(function() {
 						items,
 						loading,
 						saving,
+						sendingEmail,
+						lastCreatedSalesOrder,
+						showSuccessMessage,
+						successMessage,
 						customers,
 						companies,
 						territories,
@@ -419,6 +532,7 @@ frappe.ready(function() {
 						calculateItemAmount,
 						saveSalesOrder,
 						resetForm,
+						sendEmail,
 						onCustomerChange,
 						onItemChange
 					};
@@ -426,6 +540,27 @@ frappe.ready(function() {
 
 				template: `
 					<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4">
+						<!-- Success/Error Message Popup -->
+						<div v-if="showSuccessMessage" class="fixed top-4 right-4 z-50 max-w-md">
+							<div class="bg-white border-l-4 border-green-500 rounded-lg shadow-lg p-4 flex items-center">
+								<div class="flex-shrink-0">
+									<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+									</svg>
+								</div>
+								<div class="ml-3 flex-1">
+									<p class="text-sm font-medium text-gray-900">{{ successMessage }}</p>
+								</div>
+								<div class="ml-4 flex-shrink-0">
+									<button @click="showSuccessMessage = false" class="text-gray-400 hover:text-gray-600">
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+										</svg>
+									</button>
+								</div>
+							</div>
+						</div>
+
 						<!-- Header Section -->
 						<div class="max-w-7xl mx-auto">
 							<div class="text-center mb-8">
@@ -673,6 +808,22 @@ frappe.ready(function() {
 										</svg>
 										Reset Form
 									</button>
+									
+									<!-- Send Email Button - Only show after successful Sales Order creation -->
+
+									<button 
+										v-if="lastCreatedSalesOrder"
+										@click="sendEmail"
+										:disabled="sendingEmail"
+										class="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center font-semibold text-lg"
+									>
+										<svg v-if="!sendingEmail" class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+										</svg>
+										<div v-else class="w-6 h-6 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+										{{ sendingEmail ? 'Sending Email...' : 'Send Email' }}
+									</button>
+									
 									<button 
 										@click="saveSalesOrder"
 										:disabled="saving"
