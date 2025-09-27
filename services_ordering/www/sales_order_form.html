@@ -190,7 +190,12 @@
                             selling_price_list: 'Standard Selling',
                             company: '',
                             priority: 'Medium',
-                            order_type: 'Sales'
+                            order_type: 'Sales',
+                            team: '',
+                            showTeamDropdown: false,
+                            showTimeDropdown: false,
+                            customTime: '',
+                            time: ''
                         });
 
                         const items = ref([]);
@@ -207,6 +212,7 @@
                         const territories = ref([]);
                         const customerGroups = ref([]);
                         const priceLists = ref([]);
+                        const cleaningTeams = ref([]);
                         
                         // Dropdown states
                         const showCustomerDropdown = ref(false);
@@ -383,20 +389,29 @@
                                 });
                                 
                                 if (response && response.message && response.message.success) {
-                                    successMessage.value = `Customer "${response.message.customer_name}" created successfully!`;
+                                    lastCreatedSalesOrder.value = response.message;
+                                    
+                                    // Show custom success message
+                                    let successDetails = `Sales Order ${response.message.sales_order_name} created successfully!`;
+                                    if (response.message.data?.custom_time) {
+                                        successDetails += ` Time: ${response.message.data.custom_time}`;
+                                    }
+                                    if (response.message.data?.custom_team) {
+                                        const teamName = cleaningTeams.value.find(t => t.name === response.message.data.custom_team)?.name1 || response.message.data.custom_team;
+                                        successDetails += ` Team: ${teamName}`;
+                                    }
+                                    
+                                    // Show custom success message
+                                    successMessage.value = successDetails;
                                     isErrorMessage.value = false;
                                     showSuccessMessage.value = true;
-                                    setTimeout(() => { showSuccessMessage.value = false; }, 5000);
                                     
-                                    // Add the new customer to the list
-                                    const createdCustomer = response.message.data;
-                                    customers.value.push(createdCustomer);
+                                    // Auto-hide success message after 5 seconds
+                                    setTimeout(() => {
+                                        showSuccessMessage.value = false;
+                                    }, 5000);
                                     
-                                    // Select the newly created customer
-                                    salesOrder.value.customer = createdCustomer.name;
-                                    await onCustomerChange();
-                                    
-                                    closeCreateCustomerPopup();
+                                    // Don't reset form - let user decide when to reset
                                 } else {
                                     successMessage.value = 'Error creating customer: ' + (response?.message?.message || 'Unknown error');
                                     isErrorMessage.value = true;
@@ -490,6 +505,7 @@
                                     territories.value = data.territories || [];
                                     customerGroups.value = data.customer_groups || [];
                                     priceLists.value = data.price_lists || [];
+                                    cleaningTeams.value = data.cleaning_teams || [];
                                     
                                     console.log('Master data loaded successfully:', {
                                         customers: customers.value.length,
@@ -533,7 +549,9 @@
                                 // Prepare sales order data
                                 const salesOrderData = {
                                     ...salesOrder.value,
-                                    items: items.value
+                                    items: items.value,
+                                    time: formatTimeTo24Hour(salesOrder.value.time), // Ensure 24h format
+                                    team: salesOrder.value.team
                                 };
 
                                 console.log('Creating sales order:', salesOrderData);
@@ -549,7 +567,15 @@
                                     lastCreatedSalesOrder.value = response.message;
                                     
                                     // Show custom success message
-                                    successMessage.value = `Sales Order ${response.message.sales_order_name} created successfully!`;
+                                    let successDetails = `Sales Order ${response.message.sales_order_name} created successfully!`;
+                                    if (response.message.data?.custom_time) {
+                                        successDetails += ` Time: ${response.message.data.custom_time}`;
+                                    }
+                                    if (response.message.data?.custom_team) {
+                                        const teamName = cleaningTeams.value.find(t => t.name === response.message.data.custom_team)?.name1 || response.message.data.custom_team;
+                                        successDetails += ` Team: ${teamName}`;
+                                    }
+                                    successMessage.value = successDetails;
                                     isErrorMessage.value = false;
                                     showSuccessMessage.value = true;
                                     
@@ -590,6 +616,10 @@
 
                         // Reset form
                         const resetForm = () => {
+                            if (!confirm('Are you sure you want to reset the form? All unsaved data will be lost.')) {
+                                return; // If user clicks Cancel, do nothing
+                            }
+                            
                             salesOrder.value = {
                                 customer: '',
                                 customer_name: '',
@@ -599,7 +629,12 @@
                                 selling_price_list: 'Standard Selling',
                                 company: '',
                                 priority: 'Medium',
-                                order_type: 'Sales'
+                                order_type: 'Sales',
+                                team: '',
+                                showTeamDropdown: false,
+                                showTimeDropdown: false,
+                                customTime: '',
+                                time: ''
                             };
                             items.value = [];
                             lastCreatedSalesOrder.value = null;
@@ -728,10 +763,56 @@
                             }
                         };
 
+                        // Format time to ensure 24-hour format
+                        const formatTimeTo24Hour = (timeStr) => {
+                            if (!timeStr) return '';
+                            
+                            // If the time already uses 24-hour format, return as is
+                            if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr)) {
+                                return timeStr;
+                            }
+                            
+                            // Try to convert from 12-hour format if needed
+                            try {
+                                const timeParts = timeStr.match(/(\d+):(\d+)\s*([AP]M)?/i);
+                                if (timeParts) {
+                                    let hours = parseInt(timeParts[1]);
+                                    const minutes = timeParts[2];
+                                    const period = timeParts[3]?.toUpperCase();
+                                    
+                                    if (period === 'PM' && hours < 12) {
+                                        hours += 12;
+                                    } else if (period === 'AM' && hours === 12) {
+                                        hours = 0;
+                                    }
+                                    
+                                    return `${hours.toString().padStart(2, '0')}:${minutes}`;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing time:', e);
+                            }
+                            
+                            // Return original if parsing failed
+                            return timeStr;
+                        };
+
                         onMounted(() => {
                             console.log('Vue onMounted called');
                             fetchMasterData();
                             addItem(); // Add first item by default
+                            
+                            // Add beforeunload event to show confirmation before page refresh
+                            window.addEventListener('beforeunload', (event) => {
+                                // Check if there's any data in the form that would be lost
+                                if (salesOrder.value.customer || items.value.length > 1 || 
+                                    items.value[0]?.item_code || salesOrder.value.time || salesOrder.value.team) {
+                                    // Cancel the event
+                                    event.preventDefault();
+                                    // Chrome requires returnValue to be set
+                                    event.returnValue = 'Are you sure you want to leave? Your unsaved changes will be lost.';
+                                    return event.returnValue;
+                                }
+                            });
                         });
 
                         return {
@@ -749,6 +830,7 @@
                             territories,
                             customerGroups,
                             itemsList,
+                            cleaningTeams,
                             totalAmount,
                             vatAmount,
                             grandTotal,
@@ -778,7 +860,9 @@
                             newCustomer,
                             openCreateCustomerPopup,
                             closeCreateCustomerPopup,
-                            createNewCustomer
+                            createNewCustomer,
+                            // Time formatting
+                            formatTimeTo24Hour
                         };
                     },
 
@@ -953,24 +1037,148 @@
 
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
-                                                <input 
-                                                    type="time"
-                                                    v-model="salesOrder.time"
-                                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                                                >
+                                                <div class="relative">
+                                                    <!-- Enhanced Time Dropdown -->
+                                                    <div 
+                                                        @click="salesOrder.showTimeDropdown = !salesOrder.showTimeDropdown"
+                                                        class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:border-purple-400 hover:shadow-md transition-all duration-200 flex justify-between items-center"
+                                                    >
+                                                        <div class="flex items-center">
+                                                            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                                                <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                                </svg>
+                                                            </div>
+                                                            <span class="text-gray-700 font-medium">
+                                                                \{\{ salesOrder.time ? formatTimeTo24Hour(salesOrder.time) : 'Select time...' \}\}
+                                                            </span>
+                                                        </div>
+                                                        <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="salesOrder.showTimeDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                        </svg>
+                                                    </div>
+                                                    
+                                                    <!-- Time Slot Options -->
+                                                    <div v-if="salesOrder.showTimeDropdown" class="absolute z-30 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
+                                                        <div class="p-3">
+                                                            <!-- Morning Time Slots -->
+                                                            <div class="mb-3">
+                                                                <h3 class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2 pl-2">Morning</h3>
+                                                                <div class="grid grid-cols-3 gap-2">
+                                                                    <div 
+                                                                        v-for="hour in ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30']" 
+                                                                        :key="hour"
+                                                                        @click="salesOrder.time = hour; salesOrder.showTimeDropdown = false"
+                                                                        class="px-3 py-2 rounded-md cursor-pointer hover:bg-purple-50 transition-all duration-200 text-center"
+                                                                        :class="salesOrder.time === hour ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600'"
+                                                                    >
+                                                                        \{\{ hour \}\}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Afternoon Time Slots -->
+                                                            <div class="mb-3">
+                                                                <h3 class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2 pl-2">Afternoon</h3>
+                                                                <div class="grid grid-cols-3 gap-2">
+                                                                    <div 
+                                                                        v-for="hour in ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30']" 
+                                                                        :key="hour"
+                                                                        @click="salesOrder.time = hour; salesOrder.showTimeDropdown = false"
+                                                                        class="px-3 py-2 rounded-md cursor-pointer hover:bg-purple-50 transition-all duration-200 text-center"
+                                                                        :class="salesOrder.time === hour ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600'"
+                                                                    >
+                                                                        \{\{ hour \}\}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Evening Time Slots -->
+                                                            <div>
+                                                                <h3 class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2 pl-2">Evening</h3>
+                                                                <div class="grid grid-cols-3 gap-2">
+                                                                    <div 
+                                                                        v-for="hour in ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30']" 
+                                                                        :key="hour"
+                                                                        @click="salesOrder.time = hour; salesOrder.showTimeDropdown = false"
+                                                                        class="px-3 py-2 rounded-md cursor-pointer hover:bg-purple-50 transition-all duration-200 text-center"
+                                                                        :class="salesOrder.time === hour ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600'"
+                                                                    >
+                                                                        \{\{ hour \}\}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Custom Time Option -->
+                                                            <div class="mt-4 pt-3 border-t border-gray-200">
+                                                                <div class="flex items-center justify-between px-2 mb-1">
+                                                                    <label class="block text-xs font-medium text-gray-500">Custom Time (24h):</label>
+                                                                    <input 
+                                                                        type="time" 
+                                                                        v-model="salesOrder.customTime"
+                                                                        @change="salesOrder.time = formatTimeTo24Hour(salesOrder.customTime); salesOrder.showTimeDropdown = false"
+                                                                        class="px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                                                    >
+                                                                </div>
+                                                                <p class="text-xs text-gray-500 text-right px-2">Format: 24-hour (e.g., 13:30)</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-2">Team</label>
-                                                <select 
-                                                    v-model="salesOrder.team"
-                                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                                                >
-                                                    <option value="">Select Team</option>
-                                                    <option value="Team 1">Team 1</option>
-                                                    <option value="Team 2">Team 2</option>
-                                                    <option value="Team 3">Team 3</option>
-                                                </select>
+                                                <div class="relative">
+                                                    <!-- Enhanced Team Dropdown -->
+                                                    <div 
+                                                        @click="salesOrder.showTeamDropdown = !salesOrder.showTeamDropdown"
+                                                        class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:border-green-400 hover:shadow-md transition-all duration-200 flex justify-between items-center"
+                                                    >
+                                                        <div class="flex items-center">
+                                                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                                                <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                                </svg>
+                                                            </div>
+                                                            <span class="text-gray-700 font-medium">
+                                                                \{\{ salesOrder.team ? (cleaningTeams.find(t => t.name === salesOrder.team)?.name1 || salesOrder.team) : 'Select team...' \}\}
+                                                            </span>
+                                                        </div>
+                                                        <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="salesOrder.showTeamDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                        </svg>
+                                                    </div>
+                                                    
+                                                    <!-- Dropdown Options -->
+                                                    <div v-if="salesOrder.showTeamDropdown" class="absolute z-20 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
+                                                        <div class="p-3 space-y-1">
+                                                            <div 
+                                                                v-for="team in cleaningTeams" 
+                                                                :key="team.name"
+                                                                @click="salesOrder.team = team.name; salesOrder.showTeamDropdown = false"
+                                                                class="flex items-center p-3 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-blue-200"
+                                                            >
+                                                                <div class="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                <div class="font-medium text-gray-800">
+                                                                    \{\{ team.name1 || team.name \}\}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- No Teams Message -->
+                                                            <div v-if="cleaningTeams.length === 0" class="text-center py-4 text-gray-500">
+                                                                <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                                </svg>
+                                                                <p class="text-sm font-medium">No teams available</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

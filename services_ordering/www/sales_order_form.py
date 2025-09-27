@@ -286,10 +286,15 @@ def create_sales_order(sales_order_data):
             sales_order.order_type = sales_order_data.get("order_type", "Sales")
         
         # Handle new fields (time and team) - set only if they exist as custom fields
-        if sales_order_data.get("time") and hasattr(sales_order, 'time'):
-            sales_order.time = sales_order_data.get("time")
-        if sales_order_data.get("team") and hasattr(sales_order, 'team'):
-            sales_order.team = sales_order_data.get("team")
+        if sales_order_data.get("time"):
+            sales_order.custom_time = sales_order_data.get("time")
+            print(f"Setting custom_time to {sales_order_data.get('time')}")
+            frappe.log_error(f"Setting custom_time to {sales_order_data.get('time')}", "Sales Order Form - Custom Time")
+            
+        if sales_order_data.get("team"):
+            sales_order.custom_team = sales_order_data.get("team")
+            print(f"Setting custom_team to {sales_order_data.get('team')}")
+            frappe.log_error(f"Setting custom_team to {sales_order_data.get('team')}", "Sales Order Form - Custom Team")
             
         if sales_order_data.get("source"):
             sales_order.source = sales_order_data.get("source")
@@ -398,7 +403,9 @@ def create_sales_order(sales_order_data):
                 "total_amount": total_amount,
                 "vat_amount": vat_amount,
                 "grand_total": grand_total_with_vat,
-                "status": sales_order.status
+                "status": sales_order.status,
+                "custom_time": sales_order_data.get("time"),
+                "custom_team": sales_order_data.get("team")
             }
         }
         
@@ -418,6 +425,7 @@ def get_master_data():
         territories_result = get_territories()
         customer_groups_result = get_customer_groups()
         price_lists_result = get_price_lists()
+        cleaning_teams_result = get_cleaning_teams()
         
         return {
             "success": True,
@@ -428,7 +436,8 @@ def get_master_data():
                 "warehouses": warehouses_result.get("data", []) if warehouses_result.get("success") else [],
                 "territories": territories_result.get("data", []) if territories_result.get("success") else [],
                 "customer_groups": customer_groups_result.get("data", []) if customer_groups_result.get("success") else [],
-                "price_lists": price_lists_result.get("data", []) if price_lists_result.get("success") else []
+                "price_lists": price_lists_result.get("data", []) if price_lists_result.get("success") else [],
+                "cleaning_teams": cleaning_teams_result.get("data", []) if cleaning_teams_result.get("success") else []
             }
         }
     except Exception as e:
@@ -829,3 +838,17 @@ def create_customer(customer_data):
     except Exception as e:
         frappe.log_error(f"Error creating customer: {str(e)}", "Sales Order Form - Create Customer")
         return {"success": False, "message": f"Error creating customer: {str(e)}"}
+
+@frappe.whitelist(allow_guest=True)
+def get_cleaning_teams():
+    """Get list of cleaning teams for the dropdown"""
+    try:
+        teams = frappe.get_all(
+            "Cleaning Team",
+            fields=["name", "name1"],
+            order_by="name asc"
+        )
+        return {"success": True, "data": teams}
+    except Exception as e:
+        frappe.log_error(f"Error fetching cleaning teams: {str(e)}", "Sales Order Form - Get Cleaning Teams")
+        return {"success": False, "message": str(e)}
