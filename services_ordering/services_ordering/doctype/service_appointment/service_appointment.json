@@ -10,12 +10,13 @@
   "section_break_zzwh",
   "sales_order",
   "service_team",
-  "appointment_date_time",
   "column_break_palo",
   "customer",
   "phone_number",
   "email",
-  "team_availability"
+  "section_break_zrvf",
+  "team_availability",
+  "appointment_date_time"
  ],
  "fields": [
   {
@@ -80,13 +81,17 @@
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Email"
+  },
+  {
+   "fieldname": "section_break_zrvf",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-09-29 14:59:04.607945",
+ "modified": "2025-09-29 15:12:48.017635",
  "modified_by": "Administrator",
  "module": "Services Ordering",
  "name": "Service Appointment",
