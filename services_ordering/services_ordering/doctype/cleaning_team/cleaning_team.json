@@ -8,6 +8,8 @@
  "field_order": [
   "name1",
   "team_members",
+  "section_break_kniw",
+  "shifts",
   "section_break_olkw",
   "duty_start_time",
   "column_break_fnvg",
@@ -43,12 +45,22 @@
    "fieldname": "duty_end_time",
    "fieldtype": "Time",
    "label": "Duty End Time"
+  },
+  {
+   "fieldname": "section_break_kniw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "shifts",
+   "fieldtype": "Table",
+   "label": "Shifts",
+   "options": "Team Shift"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-29 14:47:15.010304",
+ "modified": "2025-09-30 00:29:49.399817",
  "modified_by": "Administrator",
  "module": "Services Ordering",
  "name": "Cleaning Team",

@@ -33,7 +33,7 @@ function display_team_availability(frm) {
 		'<div class="text-center p-4"><div class="loading-spinner"></div><p class="text-muted mt-2">Loading team schedule...</p></div>'
 	);
 	
-	// Get the selected team information
+	// Get the selected team information including shifts
 	frappe.call({
 		method: "frappe.client.get",
 		args: {
@@ -79,13 +79,33 @@ function display_team_availability(frm) {
 
 // Function to render calendar view
 function render_calendar_view(frm, team, appointments) {
-	// Get team's duty hours
-	const duty_start = team.duty_start_time || "09:00:00";
-	const duty_end = team.duty_end_time || "17:00:00";
+	// Get team's shifts from child table
+	const shifts = team.shifts || [];
 	
-	// Format times for display
-	const start_hour = parseInt(duty_start.split(':')[0]);
-	const end_hour = parseInt(duty_end.split(':')[0]);
+	if (!shifts.length) {
+		frm.fields_dict.team_availability.$wrapper.html(
+			'<div class="alert alert-warning">No shifts defined for this team. Please configure shifts in the team settings.</div>'
+		);
+		return;
+	}
+	
+	// Sort shifts by start time
+	shifts.sort((a, b) => {
+		const timeA = parseInt(a.start_time.split(':')[0]);
+		const timeB = parseInt(b.start_time.split(':')[0]);
+		return timeA - timeB;
+	});
+	
+	// Calculate overall working hours
+	let total_working_hours = 0;
+	shifts.forEach(shift => {
+		const start_hour = parseInt(shift.start_time.split(':')[0]);
+		const end_hour = parseInt(shift.end_time.split(':')[0]);
+		total_working_hours += (end_hour - start_hour);
+	});
+	
+	const first_shift_start = shifts[0].start_time;
+	const last_shift_end = shifts[shifts.length - 1].end_time;
 	
 
 	
@@ -104,26 +124,27 @@ function render_calendar_view(frm, team, appointments) {
 	
 	// Calculate availability statistics
 	const service_duration = frm.doc.total_service_time || 1;
-	// Fix: Total duty hours should be the difference, not +1
-	// From 11:00 to 18:00 = 18 - 11 = 7 hours
-	const total_duty_hours = end_hour - start_hour;
 	let available_slots = 0;
 	let booked_slots = 0;
 	
-	// Count available and booked slots
-	for (let hour = start_hour; hour < end_hour; hour++) {
-		const is_booked = is_time_slot_booked(appointments, hour, selected_date, service_duration);
-		const can_accommodate = can_accommodate_service_duration(hour, end_hour, service_duration);
+	// Count available and booked slots across all shifts
+	shifts.forEach(shift => {
+		const start_hour = parseInt(shift.start_time.split(':')[0]);
+		const end_hour = parseInt(shift.end_time.split(':')[0]);
 		
-		if (is_booked) {
-			booked_slots++;
-		} else if (can_accommodate) {
-			available_slots++;
+		for (let hour = start_hour; hour < end_hour; hour++) {
+			const is_booked = is_time_slot_booked(appointments, hour, selected_date, service_duration);
+			const can_accommodate = can_accommodate_service_duration_in_shifts(hour, shifts, service_duration);
+			
+			if (is_booked) {
+				booked_slots++;
+			} else if (can_accommodate) {
+				available_slots++;
+			}
 		}
-	}
+	});
 	
-	const total_service_hours = total_duty_hours;
-	const availability_percentage = total_duty_hours > 0 ? Math.round((available_slots / total_duty_hours) * 100) : 0;
+	const availability_percentage = total_working_hours > 0 ? Math.round((available_slots / total_working_hours) * 100) : 0;
 	
 	// Start building HTML
 	let html = `
@@ -141,9 +162,9 @@ function render_calendar_view(frm, team, appointments) {
 				<div class="summary-card duty-card">
 					<div class="summary-icon duty-icon">⏰</div>
 					<div class="summary-content">
-						<div class="summary-label">Service Hours</div>
-						<div class="summary-value">${format_time(duty_start)} - ${format_time(duty_end)}</div>
-						<div class="summary-detail">${total_duty_hours} hours total</div>
+						<div class="summary-label">Working Hours</div>
+						<div class="summary-value">${shifts.length} shift${shifts.length > 1 ? 's' : ''}</div>
+						<div class="summary-detail">${total_working_hours} hours total</div>
 					</div>
 				</div>
 				
@@ -207,48 +228,67 @@ function render_calendar_view(frm, team, appointments) {
 				<div class="time-slots">
 	`;
 	
-	// Create time slots for the day (hourly)
-	// Fix: Should be < end_hour, not <= end_hour
-	// From 11:00 to 18:00 means slots: 11:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-15:00, 15:00-16:00, 16:00-17:00, 17:00-18:00 (7 slots)
-	for (let hour = start_hour; hour < end_hour; hour++) {
+	// Generate time slots for each shift and breaks
+	const first_shift_start_hour = parseInt(shifts[0].start_time.split(':')[0]);
+	const last_shift_end_hour = parseInt(shifts[shifts.length - 1].end_time.split(':')[0]);
+	
+	for (let hour = first_shift_start_hour; hour < last_shift_end_hour; hour++) {
 		const slot_start_time = format_time(hour + ':00');
 		const slot_end_time = format_time((hour + 1) + ':00');
 		const slot_range_display = `${slot_start_time} - ${slot_end_time}`;
 		
-		const service_duration = frm.doc.total_service_time || 1; // Default to 1 hour if not set
-		const is_booked = is_time_slot_booked(appointments, hour, selected_date, service_duration);
-		const slot_class = is_booked ? 'booked' : 'available';
-		const is_current_selection = selected_date.getHours() === hour ? 'selected' : '';
+		// Check if this hour is within any shift or is a break
+		const shift_info = getShiftInfoForHour(hour, shifts);
+		const service_duration = frm.doc.total_service_time || 1;
 		
-		// Check if this slot can accommodate the full service duration
-		const can_accommodate = can_accommodate_service_duration(hour, end_hour, service_duration);
-		// If slot is booked, keep it as booked regardless of accommodation
-		const final_slot_class = is_booked ? 'booked' : (!can_accommodate ? 'unavailable' : slot_class);
-		
-
-		
-		// Calculate which slots would be included in this booking
-		const end_hour_for_booking = hour + service_duration;
-		const slot_range = can_accommodate ? `${hour}-${end_hour_for_booking - 1}` : '';
-		
-		html += `
-			<div class="time-slot ${final_slot_class} ${is_current_selection}" 
-				 data-hour="${hour}" 
-				 data-service-duration="${service_duration}"
-				 data-slot-range="${slot_range}">
-				<div class="time-info">
-					<div class="time">${slot_range_display}</div>
-					<div class="status-indicator">
-						<span class="status-circle"></span>
-						<span class="status-text">${is_booked ? 'Booked' : (!can_accommodate ? 'Insufficient Time' : 'Available')}</span>
+		if (shift_info.is_break) {
+			// This is a break slot
+			html += `
+				<div class="time-slot break-slot" data-hour="${hour}">
+					<div class="time-info">
+						<div class="time">${slot_range_display}</div>
+						<div class="status-indicator">
+							<span class="status-circle break"></span>
+							<span class="status-text">Break Time</span>
+						</div>
 					</div>
+					<div class="break-info">Team break period</div>
 				</div>
-				${service_duration > 1 && can_accommodate ? `<div class="duration-info">Will book: ${format_time(hour + ':00')} - ${format_time(end_hour_for_booking + ':00')} (${service_duration} hours)</div>` : ''}
-				${service_duration > 1 && !can_accommodate ? `<div class="duration-info">Duration: ${service_duration} hour(s)</div>` : ''}
-				${is_booked ? get_appointment_details(appointments, hour, selected_date) : ''}
-				${!is_booked && can_accommodate ? '<div class="book-now-prompt">Available for booking</div>' : ''}
-			</div>
-		`;
+			`;
+		} else {
+			// This is a working slot
+			const is_booked = is_time_slot_booked(appointments, hour, selected_date, service_duration);
+			const slot_class = is_booked ? 'booked' : 'available';
+			const is_current_selection = selected_date.getHours() === hour ? 'selected' : '';
+			
+			// Check if this slot can accommodate the full service duration
+			const can_accommodate = can_accommodate_service_duration_in_shifts(hour, shifts, service_duration);
+			// If slot is booked, keep it as booked regardless of accommodation
+			const final_slot_class = is_booked ? 'booked' : (!can_accommodate ? 'unavailable' : slot_class);
+			
+			// Calculate which slots would be included in this booking
+			const end_hour_for_booking = hour + service_duration;
+			const slot_range = can_accommodate ? `${hour}-${end_hour_for_booking - 1}` : '';
+			
+			html += `
+				<div class="time-slot ${final_slot_class} ${is_current_selection}" 
+					 data-hour="${hour}" 
+					 data-service-duration="${service_duration}"
+					 data-slot-range="${slot_range}">
+					<div class="time-info">
+						<div class="time">${slot_range_display}</div>
+						<div class="status-indicator">
+							<span class="status-circle"></span>
+							<span class="status-text">${is_booked ? 'Booked' : (!can_accommodate ? 'Insufficient Time' : 'Available')}</span>
+						</div>
+					</div>
+					${service_duration > 1 && can_accommodate ? `<div class="duration-info">Will book: ${format_time(hour + ':00')} - ${format_time(end_hour_for_booking + ':00')} (${service_duration} hours)</div>` : ''}
+					${service_duration > 1 && !can_accommodate ? `<div class="duration-info">Duration: ${service_duration} hour(s)</div>` : ''}
+					${is_booked ? get_appointment_details(appointments, hour, selected_date) : ''}
+					${!is_booked && can_accommodate ? '<div class="book-now-prompt">Available for booking</div>' : ''}
+				</div>
+			`;
+		}
 	}
 	
 	html += `
@@ -267,6 +307,10 @@ function render_calendar_view(frm, team, appointments) {
 				<div class="legend-item unavailable-legend">
 					<span class="status-circle" style="background-color: #ffc107; box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);"></span>
 					<span>Insufficient Time</span>
+				</div>
+				<div class="legend-item break-legend">
+					<span class="status-circle break"></span>
+					<span>Break Time</span>
 				</div>
 			</div>
 		</div>
@@ -615,6 +659,31 @@ function render_calendar_view(frm, team, appointments) {
 				color: #ffc107;
 			}
 			
+			.time-slot.break-slot {
+				border-left-color: #6c757d;
+				background-color: #f8f9fa;
+				cursor: not-allowed;
+				opacity: 0.8;
+			}
+			
+			.time-slot.break-slot .status-circle,
+			.status-circle.break {
+				background-color: #6c757d;
+				box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.2);
+			}
+			
+			.time-slot.break-slot .status-indicator {
+				background-color: rgba(108, 117, 125, 0.1);
+				color: #6c757d;
+			}
+			
+			.break-info {
+				margin-top: 5px;
+				font-size: 0.8rem;
+				color: #6c757d;
+				font-style: italic;
+			}
+			
 			.duration-info {
 				margin-top: 5px;
 				font-size: 0.8rem;
@@ -729,8 +798,8 @@ function render_calendar_view(frm, team, appointments) {
 	
 	frm.fields_dict.team_availability.$wrapper.html(html);
 	
-	// Add hover handler for available time slots to show preview
-	frm.fields_dict.team_availability.$wrapper.find('.time-slot.available').on('mouseenter', function() {
+	// Add hover handler for available time slots to show preview (exclude break slots)
+	frm.fields_dict.team_availability.$wrapper.find('.time-slot.available:not(.break-slot)').on('mouseenter', function() {
 		const start_hour = $(this).data('hour');
 		const service_duration = $(this).data('service-duration');
 		highlightSlotGroup(frm, start_hour, service_duration, 'preview');
@@ -738,13 +807,16 @@ function render_calendar_view(frm, team, appointments) {
 		clearSlotGroupHighlight(frm);
 	});
 	
-	// Add click handler for available time slots
-	frm.fields_dict.team_availability.$wrapper.find('.time-slot.available').on('click', function() {
+	// Add click handler for available time slots (exclude break slots)
+	frm.fields_dict.team_availability.$wrapper.find('.time-slot.available:not(.break-slot)').on('click', function() {
 		const selected_hour = $(this).data('hour');
 		const service_duration = frm.doc.total_service_time || 1;
 		
 		// Clear previous selections
 		frm.fields_dict.team_availability.$wrapper.find('.time-slot').removeClass('selected slot-group-start slot-group-middle slot-group-end slot-group-single slot-group-preview');
+		
+		// Get shifts for highlighting
+		const shifts = team.shifts || [];
 		
 		// Highlight the selected slot group
 		highlightSlotGroup(frm, selected_hour, service_duration, 'selected');
@@ -765,8 +837,8 @@ function render_calendar_view(frm, team, appointments) {
 			const new_date = new Date(selected_date_str);
 			const service_duration = frm.doc.total_service_time || 1;
 			
-			// Update calendar view with new date
-			updateAppointmentDateTime(frm, new_date, current_hour, service_duration);
+			// Refresh the calendar view with new date
+			display_team_availability(frm);
 		}
 	});
 }
@@ -851,6 +923,68 @@ function can_accommodate_service_duration(start_hour, duty_end_hour, service_dur
 	const required_end_hour = start_hour + service_duration;
 	// The service must end before or at the duty end hour
 	return required_end_hour <= duty_end_hour;
+}
+
+// Helper function to get shift information for a specific hour
+function getShiftInfoForHour(hour, shifts) {
+	// Check if hour is within any shift
+	for (let shift of shifts) {
+		const shift_start = parseInt(shift.start_time.split(':')[0]);
+		const shift_end = parseInt(shift.end_time.split(':')[0]);
+		
+		if (hour >= shift_start && hour < shift_end) {
+			return {
+				is_break: false,
+				shift: shift,
+				shift_start: shift_start,
+				shift_end: shift_end
+			};
+		}
+	}
+	
+	// If not in any shift, it's a break
+	return {
+		is_break: true,
+		shift: null,
+		shift_start: null,
+		shift_end: null
+	};
+}
+
+// Helper function to check if a time slot can accommodate service duration across shifts
+function can_accommodate_service_duration_in_shifts(start_hour, shifts, service_duration) {
+	// Check if we can fit the entire service duration starting from this hour
+	let hours_needed = service_duration;
+	let current_hour = start_hour;
+	
+	while (hours_needed > 0) {
+		const shift_info = getShiftInfoForHour(current_hour, shifts);
+		
+		// If we hit a break or go beyond working hours, we can't accommodate
+		if (shift_info.is_break) {
+			return false;
+		}
+		
+		// Check if we're still within the same shift or moved to next shift
+		let hours_available_in_current_shift = shift_info.shift_end - current_hour;
+		
+		if (hours_available_in_current_shift >= hours_needed) {
+			// We can fit the remaining duration in this shift
+			return true;
+		} else {
+			// Use up this shift and check if there's a next shift
+			hours_needed -= hours_available_in_current_shift;
+			current_hour = shift_info.shift_end;
+			
+			// Check if there's a next shift immediately after
+			const next_shift_info = getShiftInfoForHour(current_hour, shifts);
+			if (next_shift_info.is_break) {
+				return false; // There's a gap, can't accommodate
+			}
+		}
+	}
+	
+	return true;
 }
 
 // Helper function to get appointment details for a time slot
