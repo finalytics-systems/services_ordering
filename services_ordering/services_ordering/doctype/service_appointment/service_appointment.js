@@ -164,7 +164,7 @@ function render_calendar_view(frm, team, appointments) {
 					<div class="summary-content">
 						<div class="summary-label">Working Hours</div>
 						<div class="summary-value">${shifts.length} shift${shifts.length > 1 ? 's' : ''}</div>
-						<div class="summary-detail">${total_working_hours} hours total</div>
+						<div class="summary-detail">${total_working_hours} hours, ${getScheduleStructure(shifts).break_periods.length} break${getScheduleStructure(shifts).break_periods.length !== 1 ? 's' : ''}</div>
 					</div>
 				</div>
 				
@@ -243,16 +243,17 @@ function render_calendar_view(frm, team, appointments) {
 		
 		if (shift_info.is_break) {
 			// This is a break slot
+			const break_duration = shift_info.break_end - shift_info.break_start;
 			html += `
 				<div class="time-slot break-slot" data-hour="${hour}">
 					<div class="time-info">
 						<div class="time">${slot_range_display}</div>
 						<div class="status-indicator">
 							<span class="status-circle break"></span>
-							<span class="status-text">Break Time</span>
+							<span class="status-text">${shift_info.break_name}</span>
 						</div>
 					</div>
-					<div class="break-info">Team break period</div>
+					<div class="break-info">${break_duration} hour${break_duration > 1 ? 's' : ''} break</div>
 				</div>
 			`;
 		} else {
@@ -935,19 +936,76 @@ function getShiftInfoForHour(hour, shifts) {
 		if (hour >= shift_start && hour < shift_end) {
 			return {
 				is_break: false,
+				is_working: true,
 				shift: shift,
 				shift_start: shift_start,
-				shift_end: shift_end
+				shift_end: shift_end,
+				shift_index: shifts.indexOf(shift)
 			};
 		}
 	}
 	
-	// If not in any shift, it's a break
+	// If not in any shift, determine break information
+	const break_info = getBreakInfoForHour(hour, shifts);
 	return {
 		is_break: true,
+		is_working: false,
 		shift: null,
 		shift_start: null,
-		shift_end: null
+		shift_end: null,
+		break_start: break_info.break_start,
+		break_end: break_info.break_end,
+		break_name: break_info.break_name
+	};
+}
+
+// Helper function to get break information for a specific hour
+function getBreakInfoForHour(hour, shifts) {
+	// Sort shifts by start time
+	const sorted_shifts = [...shifts].sort((a, b) => {
+		return parseInt(a.start_time.split(':')[0]) - parseInt(b.start_time.split(':')[0]);
+	});
+	
+	// Find which break period this hour falls into
+	for (let i = 0; i < sorted_shifts.length - 1; i++) {
+		const current_shift_end = parseInt(sorted_shifts[i].end_time.split(':')[0]);
+		const next_shift_start = parseInt(sorted_shifts[i + 1].start_time.split(':')[0]);
+		
+		if (hour >= current_shift_end && hour < next_shift_start) {
+			return {
+				break_start: current_shift_end,
+				break_end: next_shift_start,
+				break_name: `Break ${i + 1}`,
+				break_index: i
+			};
+		}
+	}
+	
+	// Check if it's before first shift or after last shift
+	const first_shift_start = parseInt(sorted_shifts[0].start_time.split(':')[0]);
+	const last_shift_end = parseInt(sorted_shifts[sorted_shifts.length - 1].end_time.split(':')[0]);
+	
+	if (hour < first_shift_start) {
+		return {
+			break_start: 0, // Start of day
+			break_end: first_shift_start,
+			break_name: "Pre-shift",
+			break_index: -1
+		};
+	} else if (hour >= last_shift_end) {
+		return {
+			break_start: last_shift_end,
+			break_end: 24, // End of day
+			break_name: "Post-shift",
+			break_index: sorted_shifts.length
+		};
+	}
+	
+	return {
+		break_start: hour,
+		break_end: hour + 1,
+		break_name: "Unknown Break",
+		break_index: -1
 	};
 }
 
@@ -957,34 +1015,99 @@ function can_accommodate_service_duration_in_shifts(start_hour, shifts, service_
 	let hours_needed = service_duration;
 	let current_hour = start_hour;
 	
+	// First check: starting hour must be in a working shift
+	const start_shift_info = getShiftInfoForHour(current_hour, shifts);
+	if (start_shift_info.is_break) {
+		return false; // Can't start during a break
+	}
+	
 	while (hours_needed > 0) {
 		const shift_info = getShiftInfoForHour(current_hour, shifts);
 		
-		// If we hit a break or go beyond working hours, we can't accommodate
+		// If we hit a break, we can't accommodate continuous service
 		if (shift_info.is_break) {
 			return false;
 		}
 		
-		// Check if we're still within the same shift or moved to next shift
-		let hours_available_in_current_shift = shift_info.shift_end - current_hour;
+		// Calculate hours available in current shift
+		const hours_available_in_shift = shift_info.shift_end - current_hour;
 		
-		if (hours_available_in_current_shift >= hours_needed) {
+		if (hours_available_in_shift >= hours_needed) {
 			// We can fit the remaining duration in this shift
 			return true;
 		} else {
-			// Use up this shift and check if there's a next shift
-			hours_needed -= hours_available_in_current_shift;
+			// Use up this shift and move to the next hour
+			hours_needed -= hours_available_in_shift;
 			current_hour = shift_info.shift_end;
 			
-			// Check if there's a next shift immediately after
-			const next_shift_info = getShiftInfoForHour(current_hour, shifts);
-			if (next_shift_info.is_break) {
-				return false; // There's a gap, can't accommodate
+			// If we still need more hours, check if there's a continuous next shift
+			if (hours_needed > 0) {
+				const next_hour_info = getShiftInfoForHour(current_hour, shifts);
+				if (next_hour_info.is_break) {
+					return false; // There's a break, can't continue service
+				}
 			}
 		}
 	}
 	
 	return true;
+}
+
+// Helper function to get all working hours and break periods
+function getScheduleStructure(shifts) {
+	if (!shifts || shifts.length === 0) return { working_periods: [], break_periods: [] };
+	
+	// Sort shifts by start time
+	const sorted_shifts = [...shifts].sort((a, b) => {
+		return parseInt(a.start_time.split(':')[0]) - parseInt(b.start_time.split(':')[0]);
+	});
+	
+	const working_periods = sorted_shifts.map(shift => ({
+		start: parseInt(shift.start_time.split(':')[0]),
+		end: parseInt(shift.end_time.split(':')[0]),
+		shift: shift
+	}));
+	
+	const break_periods = [];
+	
+	// Add pre-shift break if first shift doesn't start at beginning of day
+	const first_shift_start = working_periods[0].start;
+	if (first_shift_start > 0) {
+		break_periods.push({
+			start: 0,
+			end: first_shift_start,
+			name: "Pre-shift",
+			type: "pre"
+		});
+	}
+	
+	// Add breaks between shifts
+	for (let i = 0; i < working_periods.length - 1; i++) {
+		const current_end = working_periods[i].end;
+		const next_start = working_periods[i + 1].start;
+		
+		if (current_end < next_start) {
+			break_periods.push({
+				start: current_end,
+				end: next_start,
+				name: `Break ${i + 1}`,
+				type: "between"
+			});
+		}
+	}
+	
+	// Add post-shift break if last shift doesn't end at end of day
+	const last_shift_end = working_periods[working_periods.length - 1].end;
+	if (last_shift_end < 24) {
+		break_periods.push({
+			start: last_shift_end,
+			end: 24,
+			name: "Post-shift",
+			type: "post"
+		});
+	}
+	
+	return { working_periods, break_periods };
 }
 
 // Helper function to get appointment details for a time slot
