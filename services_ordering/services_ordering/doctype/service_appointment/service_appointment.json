@@ -10,13 +10,15 @@
   "section_break_zzwh",
   "sales_order",
   "service_team",
+  "total_service_time",
   "column_break_palo",
   "customer",
   "phone_number",
   "email",
   "section_break_zrvf",
   "team_availability",
-  "appointment_date_time"
+  "appointment_date_time",
+  "appointment_end_time"
  ],
  "fields": [
   {
@@ -85,13 +87,25 @@
   {
    "fieldname": "section_break_zrvf",
    "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "sales_order.custom_total_service_time",
+   "fieldname": "total_service_time",
+   "fieldtype": "Int",
+   "label": "Total Service Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "appointment_end_time",
+   "fieldtype": "Datetime",
+   "label": "Appointment End Time"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-09-29 15:12:48.017635",
+ "modified": "2025-09-29 19:41:30.432277",
  "modified_by": "Administrator",
  "module": "Services Ordering",
  "name": "Service Appointment",
