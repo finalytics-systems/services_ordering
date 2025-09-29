@@ -6,7 +6,12 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "name1"
+  "name1",
+  "team_members",
+  "section_break_olkw",
+  "duty_start_time",
+  "column_break_fnvg",
+  "duty_end_time"
  ],
  "fields": [
   {
@@ -14,12 +19,36 @@
    "fieldtype": "Data",
    "label": "Name",
    "unique": 1
+  },
+  {
+   "fieldname": "team_members",
+   "fieldtype": "Table",
+   "label": "Team Members",
+   "options": "Cleaning Team Member"
+  },
+  {
+   "fieldname": "section_break_olkw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "duty_start_time",
+   "fieldtype": "Time",
+   "label": "Duty Start Time"
+  },
+  {
+   "fieldname": "column_break_fnvg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "duty_end_time",
+   "fieldtype": "Time",
+   "label": "Duty End Time"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-27 09:51:52.893211",
+ "modified": "2025-09-29 14:47:15.010304",
  "modified_by": "Administrator",
  "module": "Services Ordering",
  "name": "Cleaning Team",

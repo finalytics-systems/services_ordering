@@ -191,11 +191,11 @@
                             company: '',
                             priority: 'Medium',
                             order_type: 'Sales',
-                            team: '',
-                            showTeamDropdown: false,
-                            showTimeDropdown: false,
-                            customTime: '',
-                            time: ''
+                            // team: '',
+                            // showTeamDropdown: false,
+                            // showTimeDropdown: false,
+                            // customTime: '',
+                            // time: ''
                         });
 
                         const items = ref([]);
@@ -550,8 +550,8 @@
                                 const salesOrderData = {
                                     ...salesOrder.value,
                                     items: items.value,
-                                    time: formatTimeTo24Hour(salesOrder.value.time), // Ensure 24h format
-                                    team: salesOrder.value.team
+                                    // time: formatTimeTo24Hour(salesOrder.value.time), // Ensure 24h format
+                                    // team: salesOrder.value.team
                                 };
 
                                 console.log('Creating sales order:', salesOrderData);
@@ -630,11 +630,11 @@
                                 company: '',
                                 priority: 'Medium',
                                 order_type: 'Sales',
-                                team: '',
-                                showTeamDropdown: false,
-                                showTimeDropdown: false,
-                                customTime: '',
-                                time: ''
+                                // team: '',
+                                // showTeamDropdown: false,
+                                // showTimeDropdown: false,
+                                // customTime: '',
+                                // time: ''
                             };
                             items.value = [];
                             lastCreatedSalesOrder.value = null;
@@ -763,7 +763,8 @@
                             }
                         };
 
-                        // Format time to ensure 24-hour format
+                        // Format time to ensure 24-hour format (temporarily disabled)
+                        /* 
                         const formatTimeTo24Hour = (timeStr) => {
                             if (!timeStr) return '';
                             
@@ -795,6 +796,8 @@
                             // Return original if parsing failed
                             return timeStr;
                         };
+                        */
+                        const formatTimeTo24Hour = () => { return ''; }; // Placeholder function
 
                         onMounted(() => {
                             console.log('Vue onMounted called');
@@ -812,7 +815,7 @@
                                     event.returnValue = 'Are you sure you want to leave? Your unsaved changes will be lost.';
                                     return event.returnValue;
                                 }
-                            });
+                            }); 
                         });
 
                         return {
@@ -861,8 +864,8 @@
                             openCreateCustomerPopup,
                             closeCreateCustomerPopup,
                             createNewCustomer,
-                            // Time formatting
-                            formatTimeTo24Hour
+                            // Time formatting - temporarily disabled
+                            // formatTimeTo24Hour
                         };
                     },
 
@@ -1035,151 +1038,47 @@
                                                 >
                                             </div>
 
+                                            <!-- Time dropdown temporarily disabled
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
                                                 <div class="relative">
-                                                    <!-- Enhanced Time Dropdown -->
                                                     <div 
-                                                        @click="salesOrder.showTimeDropdown = !salesOrder.showTimeDropdown"
-                                                        class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:border-purple-400 hover:shadow-md transition-all duration-200 flex justify-between items-center"
+                                                        class="border-2 border-gray-200 rounded-xl p-4 bg-gray-100 text-gray-500 flex items-center"
                                                     >
                                                         <div class="flex items-center">
-                                                            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                                                <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <div class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                                                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                                 </svg>
                                                             </div>
-                                                            <span class="text-gray-700 font-medium">
-                                                                \{\{ salesOrder.time ? formatTimeTo24Hour(salesOrder.time) : 'Select time...' \}\}
+                                                            <span class="text-gray-500 font-medium">
+                                                                Time feature temporarily disabled
                                                             </span>
-                                                        </div>
-                                                        <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="salesOrder.showTimeDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                        </svg>
-                                                    </div>
-                                                    
-                                                    <!-- Time Slot Options -->
-                                                    <div v-if="salesOrder.showTimeDropdown" class="absolute z-30 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
-                                                        <div class="p-3">
-                                                            <!-- Morning Time Slots -->
-                                                            <div class="mb-3">
-                                                                <h3 class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2 pl-2">Morning</h3>
-                                                                <div class="grid grid-cols-3 gap-2">
-                                                                    <div 
-                                                                        v-for="hour in ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30']" 
-                                                                        :key="hour"
-                                                                        @click="salesOrder.time = hour; salesOrder.showTimeDropdown = false"
-                                                                        class="px-3 py-2 rounded-md cursor-pointer hover:bg-purple-50 transition-all duration-200 text-center"
-                                                                        :class="salesOrder.time === hour ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600'"
-                                                                    >
-                                                                        \{\{ hour \}\}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <!-- Afternoon Time Slots -->
-                                                            <div class="mb-3">
-                                                                <h3 class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2 pl-2">Afternoon</h3>
-                                                                <div class="grid grid-cols-3 gap-2">
-                                                                    <div 
-                                                                        v-for="hour in ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30']" 
-                                                                        :key="hour"
-                                                                        @click="salesOrder.time = hour; salesOrder.showTimeDropdown = false"
-                                                                        class="px-3 py-2 rounded-md cursor-pointer hover:bg-purple-50 transition-all duration-200 text-center"
-                                                                        :class="salesOrder.time === hour ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600'"
-                                                                    >
-                                                                        \{\{ hour \}\}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <!-- Evening Time Slots -->
-                                                            <div>
-                                                                <h3 class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2 pl-2">Evening</h3>
-                                                                <div class="grid grid-cols-3 gap-2">
-                                                                    <div 
-                                                                        v-for="hour in ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30']" 
-                                                                        :key="hour"
-                                                                        @click="salesOrder.time = hour; salesOrder.showTimeDropdown = false"
-                                                                        class="px-3 py-2 rounded-md cursor-pointer hover:bg-purple-50 transition-all duration-200 text-center"
-                                                                        :class="salesOrder.time === hour ? 'bg-purple-100 text-purple-700 font-medium' : 'text-gray-600'"
-                                                                    >
-                                                                        \{\{ hour \}\}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <!-- Custom Time Option -->
-                                                            <div class="mt-4 pt-3 border-t border-gray-200">
-                                                                <div class="flex items-center justify-between px-2 mb-1">
-                                                                    <label class="block text-xs font-medium text-gray-500">Custom Time (24h):</label>
-                                                                    <input 
-                                                                        type="time" 
-                                                                        v-model="salesOrder.customTime"
-                                                                        @change="salesOrder.time = formatTimeTo24Hour(salesOrder.customTime); salesOrder.showTimeDropdown = false"
-                                                                        class="px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                                                    >
-                                                                </div>
-                                                                <p class="text-xs text-gray-500 text-right px-2">Format: 24-hour (e.g., 13:30)</p>
-                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                            -->
 
+                                            <!-- Team dropdown temporarily disabled
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-2">Team</label>
                                                 <div class="relative">
-                                                    <!-- Enhanced Team Dropdown -->
-                                                    <div 
-                                                        @click="salesOrder.showTeamDropdown = !salesOrder.showTeamDropdown"
-                                                        class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:border-green-400 hover:shadow-md transition-all duration-200 flex justify-between items-center"
-                                                    >
+                                                    <div class="border-2 border-gray-200 rounded-xl p-4 bg-gray-100 text-gray-500 flex items-center">
                                                         <div class="flex items-center">
-                                                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                                                <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <div class="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                                                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                                                 </svg>
                                                             </div>
-                                                            <span class="text-gray-700 font-medium">
-                                                                \{\{ salesOrder.team ? (cleaningTeams.find(t => t.name === salesOrder.team)?.name1 || salesOrder.team) : 'Select team...' \}\}
+                                                            <span class="text-gray-500 font-medium">
+                                                                Team feature temporarily disabled
                                                             </span>
-                                                        </div>
-                                                        <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="salesOrder.showTeamDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                        </svg>
-                                                    </div>
-                                                    
-                                                    <!-- Dropdown Options -->
-                                                    <div v-if="salesOrder.showTeamDropdown" class="absolute z-20 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
-                                                        <div class="p-3 space-y-1">
-                                                            <div 
-                                                                v-for="team in cleaningTeams" 
-                                                                :key="team.name"
-                                                                @click="salesOrder.team = team.name; salesOrder.showTeamDropdown = false"
-                                                                class="flex items-center p-3 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-blue-200"
-                                                            >
-                                                                <div class="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
-                                                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                                                    </svg>
-                                                                </div>
-                                                                <div class="font-medium text-gray-800">
-                                                                    \{\{ team.name1 || team.name \}\}
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <!-- No Teams Message -->
-                                                            <div v-if="cleaningTeams.length === 0" class="text-center py-4 text-gray-500">
-                                                                <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                                                </svg>
-                                                                <p class="text-sm font-medium">No teams available</p>
-                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                            -->
                                         </div>
                                     </div>
 

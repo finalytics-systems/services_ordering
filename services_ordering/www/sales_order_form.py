@@ -285,7 +285,8 @@ def create_sales_order(sales_order_data):
         if sales_order_data.get("order_type"):
             sales_order.order_type = sales_order_data.get("order_type", "Sales")
         
-        # Handle new fields (time and team) - set only if they exist as custom fields
+        # Handle new fields (time and team) - temporarily disabled
+        """
         if sales_order_data.get("time"):
             sales_order.custom_time = sales_order_data.get("time")
             print(f"Setting custom_time to {sales_order_data.get('time')}")
@@ -295,6 +296,7 @@ def create_sales_order(sales_order_data):
             sales_order.custom_team = sales_order_data.get("team")
             print(f"Setting custom_team to {sales_order_data.get('team')}")
             frappe.log_error(f"Setting custom_team to {sales_order_data.get('team')}", "Sales Order Form - Custom Team")
+        """
             
         if sales_order_data.get("source"):
             sales_order.source = sales_order_data.get("source")
@@ -403,9 +405,9 @@ def create_sales_order(sales_order_data):
                 "total_amount": total_amount,
                 "vat_amount": vat_amount,
                 "grand_total": grand_total_with_vat,
-                "status": sales_order.status,
-                "custom_time": sales_order_data.get("time"),
-                "custom_team": sales_order_data.get("team")
+                "status": sales_order.status
+                # "custom_time": sales_order_data.get("time"),  # Temporarily disabled
+                # "custom_team": sales_order_data.get("team")   # Temporarily disabled
             }
         }
         
@@ -425,7 +427,7 @@ def get_master_data():
         territories_result = get_territories()
         customer_groups_result = get_customer_groups()
         price_lists_result = get_price_lists()
-        cleaning_teams_result = get_cleaning_teams()
+        # cleaning_teams_result = get_cleaning_teams()  # Temporarily disabled
         
         return {
             "success": True,
@@ -437,7 +439,7 @@ def get_master_data():
                 "territories": territories_result.get("data", []) if territories_result.get("success") else [],
                 "customer_groups": customer_groups_result.get("data", []) if customer_groups_result.get("success") else [],
                 "price_lists": price_lists_result.get("data", []) if price_lists_result.get("success") else [],
-                "cleaning_teams": cleaning_teams_result.get("data", []) if cleaning_teams_result.get("success") else []
+                "cleaning_teams": []  # Temporarily disabled
             }
         }
     except Exception as e:
@@ -786,6 +788,7 @@ def create_customer(customer_data):
         
         # Create contact if contact information is provided
         contact_created = False
+        contact_name = None
         if any([customer_data.get("mobile_no"), customer_data.get("email_id")]):
             try:
                 contact = frappe.new_doc("Contact")
@@ -813,6 +816,14 @@ def create_customer(customer_data):
                 
                 contact.insert(ignore_permissions=True)
                 contact_created = True
+                contact_name = contact.name
+                
+                # Update the customer to set primary contact
+                if contact_created:
+                    frappe.db.set_value("Customer", customer.name, "customer_primary_contact", contact.name)
+                    frappe.db.set_value("Customer", customer.name, "customer_primary_contact_name", contact.first_name)
+                    frappe.db.set_value("Customer", customer.name, "mobile_no", customer_data.get("mobile_no"))
+                    frappe.db.set_value("Customer", customer.name, "email_id", customer_data.get("email_id"))
                 
                 frappe.log_error(f"Contact created successfully for customer {customer.name}: {contact.name} with email {customer_data.get('email_id')}", "Customer Creation Debug")
                 
@@ -831,7 +842,10 @@ def create_customer(customer_data):
                 "customer_group": customer.customer_group,
                 "territory": customer.territory,
                 "contact_created": contact_created,
-                "email_provided": customer_data.get("email_id", "")
+                "contact_name": contact_name,
+                "email_provided": customer_data.get("email_id", ""),
+                "mobile_provided": customer_data.get("mobile_no", ""),
+                "primary_contact_set": contact_created
             }
         }
         
@@ -841,7 +855,8 @@ def create_customer(customer_data):
 
 @frappe.whitelist(allow_guest=True)
 def get_cleaning_teams():
-    """Get list of cleaning teams for the dropdown"""
+    """Get list of cleaning teams for the dropdown - temporarily disabled"""
+    """
     try:
         teams = frappe.get_all(
             "Cleaning Team",
@@ -852,3 +867,5 @@ def get_cleaning_teams():
     except Exception as e:
         frappe.log_error(f"Error fetching cleaning teams: {str(e)}", "Sales Order Form - Get Cleaning Teams")
         return {"success": False, "message": str(e)}
+    """
+    return {"success": True, "data": []}
