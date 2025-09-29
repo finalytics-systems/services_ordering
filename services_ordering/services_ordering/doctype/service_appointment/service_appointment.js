@@ -104,12 +104,14 @@ function render_calendar_view(frm, team, appointments) {
 	
 	// Calculate availability statistics
 	const service_duration = frm.doc.total_service_time || 1;
-	const total_duty_hours = end_hour - start_hour + 1;
+	// Fix: Total duty hours should be the difference, not +1
+	// From 11:00 to 18:00 = 18 - 11 = 7 hours
+	const total_duty_hours = end_hour - start_hour;
 	let available_slots = 0;
 	let booked_slots = 0;
 	
 	// Count available and booked slots
-	for (let hour = start_hour; hour <= end_hour; hour++) {
+	for (let hour = start_hour; hour < end_hour; hour++) {
 		const is_booked = is_time_slot_booked(appointments, hour, selected_date, service_duration);
 		const can_accommodate = can_accommodate_service_duration(hour, end_hour, service_duration);
 		
@@ -206,8 +208,13 @@ function render_calendar_view(frm, team, appointments) {
 	`;
 	
 	// Create time slots for the day (hourly)
-	for (let hour = start_hour; hour <= end_hour; hour++) {
-		const time_string = `${hour.toString().padStart(2, '0')}:00`;
+	// Fix: Should be < end_hour, not <= end_hour
+	// From 11:00 to 18:00 means slots: 11:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-15:00, 15:00-16:00, 16:00-17:00, 17:00-18:00 (7 slots)
+	for (let hour = start_hour; hour < end_hour; hour++) {
+		const slot_start_time = format_time(hour + ':00');
+		const slot_end_time = format_time((hour + 1) + ':00');
+		const slot_range_display = `${slot_start_time} - ${slot_end_time}`;
+		
 		const service_duration = frm.doc.total_service_time || 1; // Default to 1 hour if not set
 		const is_booked = is_time_slot_booked(appointments, hour, selected_date, service_duration);
 		const slot_class = is_booked ? 'booked' : 'available';
@@ -230,7 +237,7 @@ function render_calendar_view(frm, team, appointments) {
 				 data-service-duration="${service_duration}"
 				 data-slot-range="${slot_range}">
 				<div class="time-info">
-					<div class="time">${format_time(time_string)}</div>
+					<div class="time">${slot_range_display}</div>
 					<div class="status-indicator">
 						<span class="status-circle"></span>
 						<span class="status-text">${is_booked ? 'Booked' : (!can_accommodate ? 'Insufficient Time' : 'Available')}</span>
