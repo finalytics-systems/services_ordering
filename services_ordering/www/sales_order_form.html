@@ -275,6 +275,7 @@
                         const priceLists = ref([]);
                         const cleaningTeams = ref([]);
                         const cities = ref([]);
+                        const paymentModes = ref([]);
                         
                         // Dropdown states
                         const showCustomerDropdown = ref(false);
@@ -299,6 +300,16 @@
                             address_line1: '',
                             city: '',
                             country: 'Saudi Arabia'
+                        });
+                        
+                        // Payment creation popup
+                        const showCreatePaymentPopup = ref(false);
+                        const creatingPayment = ref(false);
+                        const downloadingPDF = ref(false);
+                        const newPayment = ref({
+                            mode_of_payment: '',
+                            payment_slip_file: null,
+                            payment_slip_filename: ''
                         });
 
                         // Add new item to the items list
@@ -592,6 +603,134 @@
                                 creatingCustomer.value = false;
                             }
                         };
+                        
+                        // Payment creation functions
+                        const openCreatePaymentPopup = () => {
+                            if (!lastCreatedSalesOrder.value) {
+                                showMessage('Please create a sales order first', true);
+                                return;
+                            }
+                            showCreatePaymentPopup.value = true;
+                        };
+                        
+                        const closeCreatePaymentPopup = () => {
+                            showCreatePaymentPopup.value = false;
+                            resetNewPaymentForm();
+                        };
+                        
+                        const resetNewPaymentForm = () => {
+                            newPayment.value = {
+                                mode_of_payment: '',
+                                payment_slip_file: null,
+                                payment_slip_filename: ''
+                            };
+                        };
+                        
+                        const handlePaymentFileUpload = (event) => {
+                            const file = event.target.files[0];
+                            if (file) {
+                                newPayment.value.payment_slip_filename = file.name;
+                                
+                                // Convert file to base64
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                    newPayment.value.payment_slip_file = e.target.result;
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        };
+                        
+                        const createPaymentEntry = async () => {
+                            try {
+                                creatingPayment.value = true;
+                                
+                                if (!newPayment.value.mode_of_payment) {
+                                    showMessage('Mode of Payment is required', true);
+                                    return;
+                                }
+                                
+                                if (!lastCreatedSalesOrder.value) {
+                                    showMessage('No Sales Order found', true);
+                                    return;
+                                }
+                                
+                                console.log('Creating payment entry:', newPayment.value);
+                                
+                                const response = await frappe.call({
+                                    method: "services_ordering.www.sales_order_form.create_payment_entry",
+                                    args: {
+                                        sales_order_name: lastCreatedSalesOrder.value.sales_order_name,
+                                        mode_of_payment: newPayment.value.mode_of_payment,
+                                        payment_slip_file: newPayment.value.payment_slip_file,
+                                        payment_slip_filename: newPayment.value.payment_slip_filename
+                                    }
+                                });
+                                
+                                if (response && response.message && response.message.success) {
+                                    showMessage(`Payment Entry ${response.message.payment_entry_name} created successfully!`, false);
+                                    closeCreatePaymentPopup();
+                                } else {
+                                    showMessage('Error creating payment entry: ' + (response?.message?.message || 'Unknown error'), true);
+                                }
+                                
+                            } catch (error) {
+                                console.error('Error creating payment entry:', error);
+                                showMessage('Error creating payment entry: ' + error.message, true);
+                            } finally {
+                                creatingPayment.value = false;
+                            }
+                        };
+                        
+                        const downloadSalesOrderPDF = async () => {
+                            try {
+                                downloadingPDF.value = true;
+                                
+                                if (!lastCreatedSalesOrder.value) {
+                                    showMessage('No Sales Order to download', true);
+                                    return;
+                                }
+                                
+                                console.log('Downloading PDF for:', lastCreatedSalesOrder.value.sales_order_name);
+                                
+                                const response = await frappe.call({
+                                    method: "services_ordering.www.sales_order_form.download_sales_order_pdf",
+                                    args: {
+                                        sales_order_name: lastCreatedSalesOrder.value.sales_order_name
+                                    }
+                                });
+                                
+                                if (response && response.message && response.message.success) {
+                                    // Convert base64 to blob and download
+                                    const byteCharacters = atob(response.message.pdf_content);
+                                    const byteNumbers = new Array(byteCharacters.length);
+                                    for (let i = 0; i < byteCharacters.length; i++) {
+                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                    }
+                                    const byteArray = new Uint8Array(byteNumbers);
+                                    const blob = new Blob([byteArray], { type: 'application/pdf' });
+                                    
+                                    // Create download link
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = response.message.filename;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                    
+                                    showMessage('PDF downloaded successfully!', false);
+                                } else {
+                                    showMessage('Error downloading PDF: ' + (response?.message?.message || 'Unknown error'), true);
+                                }
+                                
+                            } catch (error) {
+                                console.error('Error downloading PDF:', error);
+                                showMessage('Error downloading PDF: ' + error.message, true);
+                            } finally {
+                                downloadingPDF.value = false;
+                            }
+                        };
 
                         // Test backend connection with retry and enhanced error handling
                         const testBackendConnection = async () => {
@@ -743,6 +882,19 @@
                                         items: itemsList.value.length,
                                         // warehouses removed
                                     });
+                                    
+                                    // Fetch payment modes separately
+                                    try {
+                                        const paymentModesResponse = await frappe.call({
+                                            method: "services_ordering.www.sales_order_form.get_payment_modes"
+                                        });
+                                        if (paymentModesResponse && paymentModesResponse.message && paymentModesResponse.message.success) {
+                                            paymentModes.value = paymentModesResponse.message.data || [];
+                                            console.log('Payment modes loaded:', paymentModes.value.length);
+                                        }
+                                    } catch (error) {
+                                        console.error('Error loading payment modes:', error);
+                                    }
                                 } else {
                                     console.error('Failed to fetch master data:', response);
                                     successMessage.value = 'Failed to load master data: ' + (response?.message?.message || 'Unknown error');
@@ -1065,6 +1217,7 @@
                             itemsList,
                             cleaningTeams,
                             cities,
+                            paymentModes,
                             totalAmount,
                             vatAmount,
                             grandTotal,
@@ -1108,6 +1261,16 @@
                             // Mobile number validation
                             validateMobileNumber,
                             formatMobileNumber,
+                            // Payment creation modal
+                            showCreatePaymentPopup,
+                            creatingPayment,
+                            downloadingPDF,
+                            newPayment,
+                            openCreatePaymentPopup,
+                            closeCreatePaymentPopup,
+                            createPaymentEntry,
+                            handlePaymentFileUpload,
+                            downloadSalesOrderPDF,
                             // Time formatting - temporarily disabled
                             // formatTimeTo24Hour
                         };
@@ -1514,7 +1677,7 @@
                                     </div>
 
                                     <!-- Action Buttons -->
-                                    <div class="flex justify-center space-x-4">
+                                    <div class="flex justify-center space-x-4 flex-wrap">
                                         <button 
                                             @click="resetForm"
                                             class="px-8 py-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center font-semibold text-lg"
@@ -1523,6 +1686,32 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                             </svg>
                                             Reset Form
+                                        </button>
+                                        
+                                        <!-- Download PDF Button - Only show after successful Sales Order creation -->
+                                        <button 
+                                            v-if="lastCreatedSalesOrder"
+                                            @click="downloadSalesOrderPDF"
+                                            :disabled="downloadingPDF"
+                                            class="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center font-semibold text-lg"
+                                        >
+                                            <svg v-if="!downloadingPDF" class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            <div v-else class="w-6 h-6 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            \{\{ downloadingPDF ? 'Downloading...' : 'Download PDF' \}\}
+                                        </button>
+                                        
+                                        <!-- Create Payment Button - Only show after successful Sales Order creation -->
+                                        <button 
+                                            v-if="lastCreatedSalesOrder"
+                                            @click="openCreatePaymentPopup"
+                                            class="px-8 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center font-semibold text-lg"
+                                        >
+                                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                            </svg>
+                                            Create Payment
                                         </button>
                                         
                                         <!-- Send Email Button - Only show after successful Sales Order creation -->
@@ -1880,6 +2069,92 @@
                                             </svg>
                                             <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                             \{\{ creatingCustomer ? 'Creating Customer...' : 'Create Customer' \}\}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Create Payment Popup Modal -->
+                        <div v-if="showCreatePaymentPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                                <div class="p-6">
+                                    <!-- Modal Header -->
+                                    <div class="flex items-center justify-between mb-6">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                </svg>
+                                            </div>
+                                            <h2 class="text-2xl font-bold text-gray-800">Create Payment Entry</h2>
+                                        </div>
+                                        <button @click="closeCreatePaymentPopup" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Payment Info -->
+                                    <div v-if="lastCreatedSalesOrder" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-6">
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Sales Order Details</h3>
+                                        <p class="text-sm text-gray-600"><strong>Order:</strong> \{\{ lastCreatedSalesOrder.sales_order_name \}\}</p>
+                                        <p class="text-sm text-gray-600"><strong>Customer:</strong> \{\{ salesOrder.customer_name || salesOrder.customer \}\}</p>
+                                        <p class="text-sm text-gray-600"><strong>Amount:</strong> SAR \{\{ lastCreatedSalesOrder.data?.grand_total?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00' \}\}</p>
+                                    </div>
+                                    
+                                    <!-- Payment Form -->
+                                    <div class="space-y-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Mode of Payment *</label>
+                                            <select 
+                                                v-model="newPayment.mode_of_payment"
+                                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                                                required
+                                            >
+                                                <option value="">Select Mode of Payment</option>
+                                                <option v-for="mode in paymentModes" :key="mode.name" :value="mode.name">
+                                                    \{\{ mode.name \}\}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Slip / Receipt</label>
+                                            <div class="relative">
+                                                <input 
+                                                    type="file"
+                                                    @change="handlePaymentFileUpload"
+                                                    accept="image/*,application/pdf"
+                                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                                                >
+                                            </div>
+                                            <p v-if="newPayment.payment_slip_filename" class="mt-2 text-sm text-gray-600">
+                                                Selected: \{\{ newPayment.payment_slip_filename \}\}
+                                            </p>
+                                            <p class="mt-2 text-xs text-gray-500">Upload payment receipt or slip (optional)</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Modal Footer -->
+                                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                                        <button 
+                                            @click="closeCreatePaymentPopup"
+                                            class="px-6 py-3 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-all duration-200 font-semibold"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            @click="createPaymentEntry"
+                                            :disabled="creatingPayment || !newPayment.mode_of_payment"
+                                            class="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center font-semibold"
+                                        >
+                                            <svg v-if="!creatingPayment" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            \{\{ creatingPayment ? 'Creating Payment...' : 'Create Payment Entry' \}\}
                                         </button>
                                     </div>
                                 </div>

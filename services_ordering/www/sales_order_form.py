@@ -886,3 +886,134 @@ def get_cleaning_teams():
         return {"success": False, "message": str(e)}
     """
     return {"success": True, "data": []}
+
+@frappe.whitelist(allow_guest=True)
+def get_payment_modes():
+    """Get list of payment modes for the dropdown"""
+    try:
+        payment_modes = frappe.get_all(
+            "Mode of Payment",
+            fields=["name", "type"],
+            order_by="name asc"
+        )
+        return {"success": True, "data": payment_modes}
+    except Exception as e:
+        frappe.log_error(f"Error fetching payment modes: {str(e)}", "Sales Order Form - Get Payment Modes")
+        return {"success": False, "message": str(e)}
+
+@frappe.whitelist(allow_guest=True)
+def create_payment_entry(sales_order_name, mode_of_payment, payment_slip_file=None, payment_slip_filename=None):
+    """Create a payment entry for a sales order"""
+    try:
+        if not sales_order_name:
+            return {"success": False, "message": "Sales Order name is required"}
+        
+        if not mode_of_payment:
+            return {"success": False, "message": "Mode of Payment is required"}
+        
+        # Check if Sales Order exists
+        if not frappe.db.exists("Sales Order", sales_order_name):
+            return {"success": False, "message": "Sales Order not found"}
+        
+        # Get Sales Order document
+        sales_order = frappe.get_doc("Sales Order", sales_order_name)
+        
+        # Create new Payment Entry document
+        payment_entry = frappe.new_doc("Payment Entry")
+        
+        # Set basic fields
+        payment_entry.payment_type = "Receive"
+        payment_entry.party_type = "Customer"
+        payment_entry.party = sales_order.customer
+        payment_entry.party_name = sales_order.customer_name
+        payment_entry.company = sales_order.company
+        payment_entry.posting_date = nowdate()
+        payment_entry.mode_of_payment = mode_of_payment
+        
+        # If no default account found, get from company
+        if not payment_entry.paid_to:
+            payment_entry.paid_to = frappe.get_value("Company", sales_order.company, "default_cash_account")
+        
+        # Set paid amount
+        payment_entry.paid_amount = sales_order.grand_total
+        payment_entry.received_amount = sales_order.grand_total
+        payment_entry.target_exchange_rate = 1
+        payment_entry.source_exchange_rate = 1
+        
+        # Add reference to Sales Order
+        payment_entry.append("references", {
+            "reference_doctype": "Sales Order",
+            "reference_name": sales_order_name,
+            "total_amount": sales_order.grand_total,
+            "outstanding_amount": sales_order.grand_total,
+            "allocated_amount": sales_order.grand_total
+        })
+        
+        # Handle file attachment if provided
+        if payment_slip_file and payment_slip_filename:
+            try:
+                # Save file to Frappe's file system
+                import base64
+                file_doc = frappe.get_doc({
+                    "doctype": "File",
+                    "file_name": payment_slip_filename,
+                    "content": base64.b64decode(payment_slip_file.split(',')[1] if ',' in payment_slip_file else payment_slip_file),
+                    "is_private": 1,
+                    "folder": "Home/Attachments"
+                })
+                file_doc.insert(ignore_permissions=True)
+                
+                # Set custom field with file URL
+                payment_entry.custom_payment_slip = file_doc.file_url
+                
+            except Exception as file_error:
+                frappe.log_error(f"Error uploading payment slip: {str(file_error)}", "Payment Entry - File Upload")
+                # Continue without failing the entire payment creation
+        
+        # Insert the document
+        payment_entry.insert(ignore_permissions=True)
+        
+        # Submit the payment entry
+        payment_entry.submit()
+        
+        return {
+            "success": True,
+            "message": f"Payment Entry {payment_entry.name} created successfully!",
+            "payment_entry_name": payment_entry.name,
+            "data": {
+                "name": payment_entry.name,
+                "paid_amount": payment_entry.paid_amount,
+                "mode_of_payment": payment_entry.mode_of_payment,
+                "posting_date": payment_entry.posting_date
+            }
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error creating payment entry: {str(e)}", "Sales Order Form - Create Payment Entry")
+        return {"success": False, "message": f"Error creating payment entry: {str(e)}"}
+
+@frappe.whitelist(allow_guest=True)
+def download_sales_order_pdf(sales_order_name):
+    """Generate and return Sales Order PDF in SS Order format"""
+    try:
+        if not sales_order_name:
+            return {"success": False, "message": "Sales Order name is required"}
+        
+        # Check if Sales Order exists
+        if not frappe.db.exists("Sales Order", sales_order_name):
+            return {"success": False, "message": "Sales Order not found"}
+        
+        # Generate PDF
+        import base64
+        pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+        pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+        
+        return {
+            "success": True,
+            "pdf_content": pdf_base64,
+            "filename": f"{sales_order_name}.pdf"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error generating sales order PDF: {str(e)}", "Sales Order Form - Download PDF")
+        return {"success": False, "message": f"Error generating PDF: {str(e)}"}
