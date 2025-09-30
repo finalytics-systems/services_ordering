@@ -1,3 +1,6 @@
+from frappe.utils import fixtures
+
+
 app_name = "services_ordering"
 app_title = "Services Ordering"
 app_publisher = "Haris"
@@ -240,3 +243,14 @@ doc_events = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+
+fixtures = [
+    {
+        "dt": "Workspace",
+        "filters": [
+            [
+                "name", "in", ["Sage Operations", "Sage Sales"]
+            ]
+        ]
+    },
+]
