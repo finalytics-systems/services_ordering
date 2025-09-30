@@ -15,7 +15,7 @@ def get_customers():
     try:
         customers = frappe.get_all(
             "Customer",
-            fields=["name", "customer_name", "customer_group", "territory", "customer_type"],
+            fields=["name", "customer_name", "customer_group", "territory", "customer_type", "mobile_no", "email_id"],
             filters={"disabled": 0},
             order_by="customer_name asc",
             limit=200
@@ -403,7 +403,7 @@ def create_sales_order(sales_order_data):
         sales_order.insert(ignore_permissions=True)
         
         # Submit if auto-submit is enabled (optional)
-        # sales_order.submit()
+        sales_order.submit()
         
         # Calculate totals with VAT
         total_amount = flt(sales_order.net_total or sales_order.total or 0)
