@@ -9,6 +9,15 @@ frappe.ui.form.on("Service Appointment", {
 		}
 	},
 	
+	onload: function(frm) {
+		// Set up query for sales_order field to show only paid sales orders
+		frm.set_query("sales_order", function() {
+			return {
+				query: "services_ordering.services_ordering.doctype.service_appointment.service_appointment.get_paid_sales_orders"
+			};
+		});
+	},
+	
 	service_team: function(frm) {
 		// Update calendar view when team is selected
 		if (frm.doc.service_team) {
@@ -127,6 +136,19 @@ function render_calendar_view(frm, team, appointments) {
 	let available_slots = 0;
 	let booked_slots = 0;
 	
+	// Count appointments on the selected date
+	const appointments_on_selected_date = appointments.filter(function(appointment) {
+		if (!appointment.appointment_date_time) return false;
+		try {
+			const appt_start = new Date(appointment.appointment_date_time);
+			return appt_start.getDate() === selected_date.getDate() && 
+				   appt_start.getMonth() === selected_date.getMonth() && 
+				   appt_start.getFullYear() === selected_date.getFullYear();
+		} catch (e) {
+			return false;
+		}
+	});
+	
 	// Count available and booked slots across all shifts
 	shifts.forEach(shift => {
 		const start_hour = parseInt(shift.start_time.split(':')[0]);
@@ -186,14 +208,14 @@ function render_calendar_view(frm, team, appointments) {
 					</div>
 				</div>
 				
-				<div class="summary-card bookings-card">
-					<div class="summary-icon bookings-icon">📋</div>
-					<div class="summary-content">
-						<div class="summary-label">Bookings Today</div>
-						<div class="summary-value">${appointments.length}</div>
-						<div class="summary-detail">${booked_slots} slots occupied</div>
-					</div>
+							<div class="summary-card bookings-card">
+				<div class="summary-icon bookings-icon">📋</div>
+				<div class="summary-content">
+					<div class="summary-label">Bookings</div>
+					<div class="summary-value">${appointments_on_selected_date.length}</div>
+					<div class="summary-detail">${booked_slots} slots occupied</div>
 				</div>
+			</div>
 			</div>
 		
 			<div class="schedule-header">
@@ -830,13 +852,28 @@ function render_calendar_view(frm, team, appointments) {
 	frm.fields_dict.team_availability.$wrapper.find('.date-picker').on('change', function() {
 		const selected_date_str = $(this).val();
 		if (selected_date_str) {
-			// Get current hour from existing appointment time or use default
-			const current_hour = frm.doc.appointment_date_time ? 
-				new Date(frm.doc.appointment_date_time).getHours() : start_hour;
-				
 			// Create date object from selected date
 			const new_date = new Date(selected_date_str);
-			const service_duration = frm.doc.total_service_time || 1;
+			
+			// Get current time (hour and minute) from existing appointment or use start of first shift
+			let time_to_use = { hours: 9, minutes: 0 }; // Default to 9:00 AM
+			
+			if (frm.doc.appointment_date_time) {
+				const current_datetime = new Date(frm.doc.appointment_date_time);
+				time_to_use.hours = current_datetime.getHours();
+				time_to_use.minutes = current_datetime.getMinutes();
+			} else if (shifts && shifts.length > 0) {
+				// Use first shift start time as default
+				const first_shift_start_hour = parseInt(shifts[0].start_time.split(':')[0]);
+				time_to_use.hours = first_shift_start_hour;
+			}
+			
+			// Set the time on the new date
+			new_date.setHours(time_to_use.hours, time_to_use.minutes, 0, 0);
+			
+			// Update the appointment_date_time field with the new date
+			const formatted_datetime = formatDateTimeForFrappe(new_date);
+			frm.set_value('appointment_date_time', formatted_datetime);
 			
 			// Refresh the calendar view with new date
 			display_team_availability(frm);

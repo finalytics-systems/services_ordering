@@ -46,3 +46,33 @@ class ServiceAppointment(Document):
 				),
 				title=_("Double Booking Not Allowed")
 			)
+
+
+@frappe.whitelist()
+def get_paid_sales_orders(doctype, txt, searchfield, start, page_len, filters):
+	"""
+	Query function to return only sales orders that have payment entries against them.
+	This is used to filter the sales_order Link field in Service Appointment.
+	"""
+	return frappe.db.sql("""
+		SELECT DISTINCT so.name, so.customer_name, so.transaction_date, so.grand_total
+		FROM `tabSales Order` so
+		INNER JOIN `tabPayment Entry Reference` per 
+			ON per.reference_name = so.name 
+			AND per.reference_doctype = 'Sales Order'
+		INNER JOIN `tabPayment Entry` pe 
+			ON pe.name = per.parent 
+			AND pe.docstatus = 1
+		WHERE 
+			so.docstatus = 1
+			AND (
+				so.name LIKE %(txt)s 
+				OR so.customer_name LIKE %(txt)s
+			)
+		ORDER BY so.transaction_date DESC
+		LIMIT %(start)s, %(page_len)s
+	""", {
+		'txt': f'%{txt}%',
+		'start': start,
+		'page_len': page_len
+	})
