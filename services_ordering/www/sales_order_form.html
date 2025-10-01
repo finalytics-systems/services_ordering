@@ -1756,7 +1756,7 @@
                                         </div>
 
                                         <!-- Services Table - Desktop View -->
-                                        <div class="hidden md:block overflow-x-auto">
+                                        <div class="hidden md:block overflow-visible">
                                             <table class="w-full table-fixed">
                                                 <thead>
                                                     <tr class="bg-gray-50 border-b border-gray-200">
@@ -1792,7 +1792,7 @@
                                                                 </div>
                                                                 
                                                                 <!-- Enhanced Dropdown Options -->
-                                                                <div v-if="showItemDropdown[index]" class="absolute z-50 left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto w-96" style="min-width: 400px;">
+                                                                <div v-if="showItemDropdown[index]" class="absolute z-[9999] left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl w-96" style="min-width: 400px; position: fixed; top: auto; left: auto;">
                                                                     <div class="p-4">
                                                                         <!-- Enhanced Search Box -->
                                                                         <div class="relative mb-4">
