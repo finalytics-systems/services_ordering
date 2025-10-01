@@ -2219,6 +2219,83 @@
                                             
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                                                    <div class="relative">
+                                                        <!-- City Dropdown -->
+                                                        <div 
+                                                            @click="toggleCityDropdown"
+                                                            class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:border-green-400 hover:shadow-md transition-all duration-200 flex justify-between items-center"
+                                                        >
+                                                            <div class="flex items-center">
+                                                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                                                    <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                <span class="text-gray-700 font-medium">
+                                                                    \{\{ newCustomer.city ? (cities.find(c => c.city === newCustomer.city)?.city || newCustomer.city) : 'Select city...' \}\}
+                                                                </span>
+                                                            </div>
+                                                            <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="showCityDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+                                                        
+                                                        <!-- City Dropdown Options -->
+                                                        <div v-if="showCityDropdown" class="absolute z-30 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
+                                                            <div class="p-4">
+                                                                <!-- Search Box -->
+                                                                <div class="relative mb-4">
+                                                                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                                                    </svg>
+                                                                    <input 
+                                                                        v-model="citySearchTerm"
+                                                                        type="text"
+                                                                        placeholder="Search cities..."
+                                                                        class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all duration-200"
+                                                                    >
+                                                                </div>
+                                                                
+                                                                <!-- Options List -->
+                                                                <div class="space-y-2">
+                                                                    <!-- City options -->
+                                                                    <div 
+                                                                        v-for="city in filteredCities" 
+                                                                        :key="city.city"
+                                                                        @click="selectCity(city, $event)"
+                                                                        class="flex items-center p-3 hover:bg-purple-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-purple-200"
+                                                                    >
+                                                                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                                                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                                            </svg>
+                                                                        </div>
+                                                                        <div class="flex-1">
+                                                                            <div class="font-semibold text-gray-900 text-base">\{\{ city.city \}\}</div>
+                                                                            <div class="text-sm text-gray-600 mt-1">
+                                                                                <span v-if="city.state" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                                                    📍 \{\{ city.state \}\}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <!-- No Results Message -->
+                                                                <div v-if="filteredCities.length === 0 && citySearchTerm" class="text-center py-8 text-gray-500">
+                                                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                                    </svg>
+                                                                    <p class="text-lg font-medium">No cities found</p>
+                                                                    <p class="text-sm">Try adjusting your search terms</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div>
                                                     <label class="block text-sm font-medium text-gray-700 mb-2">Neighborhood</label>
                                                     <div class="relative">
                                                         <!-- Neighborhood Dropdown -->
@@ -2307,93 +2384,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
-                                                    <div class="relative">
-                                                        <!-- City Dropdown -->
-                                                        <div 
-                                                            @click="toggleCityDropdown"
-                                                            class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:border-green-400 hover:shadow-md transition-all duration-200 flex justify-between items-center"
-                                                        >
-                                                            <div class="flex items-center">
-                                                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                                                    <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                                    </svg>
-                                                                </div>
-                                                                <span class="text-gray-700 font-medium">
-                                                                    \{\{ newCustomer.city ? (cities.find(c => c.city === newCustomer.city)?.city || newCustomer.city) : 'Select city...' \}\}
-                                                                </span>
-                                                            </div>
-                                                            <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="showCityDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                            </svg>
-                                                        </div>
-                                                        
-                                                        <!-- City Dropdown Options -->
-                                                        <div v-if="showCityDropdown" class="absolute z-30 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
-                                                            <div class="p-4">
-                                                                <!-- Search Box -->
-                                                                <div class="relative mb-4">
-                                                                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                                                    </svg>
-                                                                    <input 
-                                                                        v-model="citySearchTerm"
-                                                                        type="text"
-                                                                        placeholder="Search cities..."
-                                                                        class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all duration-200"
-                                                                    >
-                                                                </div>
-                                                                
-                                                                <!-- Options List -->
-                                                                <div class="space-y-2">
-                                                                    <!-- City options -->
-                                                                    <div 
-                                                                        v-for="city in filteredCities" 
-                                                                        :key="city.city"
-                                                                        @click="selectCity(city, $event)"
-                                                                        class="flex items-center p-3 hover:bg-purple-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-purple-200"
-                                                                    >
-                                                                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                                                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                                            </svg>
-                                                                        </div>
-                                                                        <div class="flex-1">
-                                                                            <div class="font-semibold text-gray-900 text-base">\{\{ city.city \}\}</div>
-                                                                            <div class="text-sm text-gray-600 mt-1">
-                                                                                <span v-if="city.state" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                                                                    📍 \{\{ city.state \}\}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <!-- No Results Message -->
-                                                                <div v-if="filteredCities.length === 0 && citySearchTerm" class="text-center py-8 text-gray-500">
-                                                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                                    </svg>
-                                                                    <p class="text-lg font-medium">No cities found</p>
-                                                                    <p class="text-sm">Try adjusting your search terms</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                                                <input 
-                                                    v-model="newCustomer.country"
-                                                    type="text"
-                                                    placeholder="Enter country"
-                                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                                                >
                                             </div>
                                         </div>
                                     </div>
