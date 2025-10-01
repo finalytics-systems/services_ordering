@@ -275,6 +275,7 @@
                         const priceLists = ref([]);
                         const cleaningTeams = ref([]);
                         const cities = ref([]);
+                        const neighborhoods = ref([]);
                         const paymentModes = ref([]);
                         
                         // Dropdown states
@@ -282,10 +283,12 @@
                         const showItemDropdown = ref({});
                         const showTerritoryDropdown = ref(false);
                         const showCityDropdown = ref(false);
+                        const showNeighborhoodDropdown = ref(false);
                         const customerSearchTerm = ref('');
                         const itemSearchTerm = ref({});
                         const territorySearchTerm = ref('');
                         const citySearchTerm = ref('');
+                        const neighborhoodSearchTerm = ref('');
                         
                         // Customer creation popup
                         const showCreateCustomerPopup = ref(false);
@@ -404,6 +407,27 @@
                             );
                         });
                         
+                        // Filtered neighborhoods for search (filtered by city and search term)
+                        const filteredNeighborhoods = computed(() => {
+                            // First filter by selected city
+                            let filtered = neighborhoods.value;
+                            
+                            if (newCustomer.value.city) {
+                                filtered = filtered.filter(neighborhood => 
+                                    neighborhood.city === newCustomer.value.city
+                                );
+                            }
+                            
+                            // Then filter by search term
+                            if (neighborhoodSearchTerm.value) {
+                                filtered = filtered.filter(neighborhood => 
+                                    neighborhood.name && neighborhood.name.toLowerCase().includes(neighborhoodSearchTerm.value.toLowerCase())
+                                );
+                            }
+                            
+                            return filtered;
+                        });
+                        
                         // Toggle customer dropdown
                         const toggleCustomerDropdown = () => {
                             showCustomerDropdown.value = !showCustomerDropdown.value;
@@ -463,9 +487,31 @@
                                 event.stopPropagation();
                                 event.preventDefault();
                             }
+                            
+                            // Clear neighborhood if city changes
+                            if (newCustomer.value.city !== city.city) {
+                                newCustomer.value.neighborhood = '';
+                            }
+                            
                             newCustomer.value.city = city.city;
                             showCityDropdown.value = false;
                             citySearchTerm.value = '';
+                        };
+                        
+                        // Toggle neighborhood dropdown
+                        const toggleNeighborhoodDropdown = () => {
+                            showNeighborhoodDropdown.value = !showNeighborhoodDropdown.value;
+                        };
+                        
+                        // Select neighborhood
+                        const selectNeighborhood = (neighborhood, event) => {
+                            if (event) {
+                                event.stopPropagation();
+                                event.preventDefault();
+                            }
+                            newCustomer.value.neighborhood = neighborhood.name;
+                            showNeighborhoodDropdown.value = false;
+                            neighborhoodSearchTerm.value = '';
                         };
                         
                         // Mobile number validation
@@ -874,11 +920,13 @@
                                     priceLists.value = data.price_lists || [];
                                     cleaningTeams.value = data.cleaning_teams || [];
                                     cities.value = data.cities || [];
+                                    neighborhoods.value = data.neighborhoods || [];
                                     
                                     console.log('Master data loaded successfully:', {
                                         customers: customers.value.length,
                                         companies: companies.value.length,
                                         items: itemsList.value.length,
+                                        neighborhoods: neighborhoods.value.length,
                                         // warehouses removed
                                     });
                                     
@@ -1216,6 +1264,7 @@
                             itemsList,
                             cleaningTeams,
                             cities,
+                            neighborhoods,
                             paymentModes,
                             totalAmount,
                             vatAmount,
@@ -1234,13 +1283,16 @@
                             showItemDropdown,
                             showTerritoryDropdown,
                             showCityDropdown,
+                            showNeighborhoodDropdown,
                             customerSearchTerm,
                             itemSearchTerm,
                             territorySearchTerm,
                             citySearchTerm,
+                            neighborhoodSearchTerm,
                             filteredCustomers,
                             filteredTerritories,
                             filteredCities,
+                            filteredNeighborhoods,
                             toggleCustomerDropdown,
                             selectCustomer,
                             toggleItemDropdown,
@@ -1250,6 +1302,8 @@
                             selectTerritory,
                             toggleCityDropdown,
                             selectCity,
+                            toggleNeighborhoodDropdown,
+                            selectNeighborhood,
                             // Customer creation modal
                             showCreateCustomerPopup,
                             creatingCustomer,
@@ -1855,17 +1909,96 @@
                                                 >
                                             </div>
                                             
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-2">Neighborhood</label>
-                                                <input 
-                                                    v-model="newCustomer.neighborhood"
-                                                    type="text"
-                                                    placeholder="Enter neighborhood"
-                                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                                                >
-                                            </div>
-                                            
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-2">Neighborhood</label>
+                                                    <div class="relative">
+                                                        <!-- Neighborhood Dropdown -->
+                                                        <div 
+                                                            @click="newCustomer.city ? toggleNeighborhoodDropdown() : null"
+                                                            class="border-2 border-gray-200 rounded-xl p-4 bg-white transition-all duration-200 flex justify-between items-center"
+                                                            :class="newCustomer.city ? 'cursor-pointer hover:border-green-400 hover:shadow-md' : 'cursor-not-allowed bg-gray-50 opacity-60'"
+                                                        >
+                                                            <div class="flex items-center">
+                                                                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                                                                    <svg class="w-5 h-5 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                <span class="text-gray-700 font-medium" :class="!newCustomer.city ? 'text-gray-400' : ''">
+                                                                    \{\{ newCustomer.neighborhood || (newCustomer.city ? 'Select neighborhood...' : 'Select city first...') \}\}
+                                                                </span>
+                                                            </div>
+                                                            <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="showNeighborhoodDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+                                                        
+                                                        <!-- Neighborhood Dropdown Options -->
+                                                        <div v-if="showNeighborhoodDropdown" class="absolute z-30 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
+                                                            <div class="p-4">
+                                                                <!-- Search Box -->
+                                                                <div class="relative mb-4">
+                                                                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                                                    </svg>
+                                                                    <input 
+                                                                        v-model="neighborhoodSearchTerm"
+                                                                        type="text"
+                                                                        placeholder="Search neighborhoods..."
+                                                                        class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all duration-200"
+                                                                    >
+                                                                </div>
+                                                                
+                                                                <!-- Options List -->
+                                                                <div class="space-y-2">
+                                                                    <!-- Neighborhood options -->
+                                                                    <div 
+                                                                        v-for="neighborhood in filteredNeighborhoods" 
+                                                                        :key="neighborhood.name"
+                                                                        @click="selectNeighborhood(neighborhood, $event)"
+                                                                        class="flex items-center p-3 hover:bg-orange-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-orange-200"
+                                                                    >
+                                                                        <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                                                                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                            </svg>
+                                                                        </div>
+                                                                        <div class="flex-1">
+                                                                            <div class="font-semibold text-gray-900 text-base">\{\{ neighborhood.name \}\}</div>
+                                                                            <div class="text-sm text-gray-600 mt-1">
+                                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                                    🏙️ \{\{ neighborhood.city \}\}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <!-- No City Selected Message -->
+                                                                <div v-if="!newCustomer.city" class="text-center py-8 text-gray-500">
+                                                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                                    </svg>
+                                                                    <p class="text-lg font-medium">Please select a city first</p>
+                                                                    <p class="text-sm">Neighborhoods will be filtered by city</p>
+                                                                </div>
+                                                                
+                                                                <!-- No Results Message -->
+                                                                <div v-else-if="filteredNeighborhoods.length === 0" class="text-center py-8 text-gray-500">
+                                                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                    </svg>
+                                                                    <p class="text-lg font-medium">No neighborhoods found</p>
+                                                                    <p class="text-sm">\{\{ neighborhoodSearchTerm ? 'Try adjusting your search terms' : 'No neighborhoods available for this city' \}\}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 mb-2">City</label>

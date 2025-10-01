@@ -138,6 +138,31 @@ def get_cities():
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist(allow_guest=True)
+def get_neighborhoods(city=None):
+    """Get list of neighborhoods for the dropdown, optionally filtered by city"""
+    try:
+        filters = {}
+        
+        # Add disabled filter if column exists
+        if frappe.db.has_column("Neighborhood", "disabled"):
+            filters["disabled"] = 0
+        
+        # Add city filter if provided
+        if city:
+            filters["city"] = city
+        
+        neighborhoods = frappe.get_all(
+            "Neighborhood",
+            fields=["name", "city"],
+            filters=filters,
+            order_by="name asc"
+        )
+        return {"success": True, "data": neighborhoods}
+    except Exception as e:
+        frappe.log_error(f"Error fetching neighborhoods: {str(e)}", "Sales Order Form - Get Neighborhoods")
+        return {"success": False, "message": str(e)}
+
+@frappe.whitelist(allow_guest=True)
 def get_customer_details(customer):
     """Get detailed customer information"""
     try:
@@ -443,6 +468,7 @@ def get_master_data():
         customer_groups_result = get_customer_groups()
         price_lists_result = get_price_lists()
         cities_result = get_cities()
+        neighborhoods_result = get_neighborhoods()
         # cleaning_teams_result = get_cleaning_teams()  # Temporarily disabled
         
         return {
@@ -456,6 +482,7 @@ def get_master_data():
                 "customer_groups": customer_groups_result.get("data", []) if customer_groups_result.get("success") else [],
                 "price_lists": price_lists_result.get("data", []) if price_lists_result.get("success") else [],
                 "cities": cities_result.get("data", []) if cities_result.get("success") else [],
+                "neighborhoods": neighborhoods_result.get("data", []) if neighborhoods_result.get("success") else [],
                 "cleaning_teams": []  # Temporarily disabled
             }
         }
