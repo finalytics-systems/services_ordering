@@ -1043,7 +1043,7 @@
                                 }
                                 
                                 if (items.value.length === 0) {
-                                    showMessage('Please add at least one item', true);
+                                    showMessage('Please add at least one service', true);
                                     return;
                                 }
 
@@ -1402,7 +1402,7 @@
                     },
 
                     template: `
-                        <div class="min-h-screen bg-gradient-to-br from-green-100 via-white to-yellow-100 p-2 sm:p-4 md:p-6">
+                        <div class="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6">
                             <!-- Success/Error Message Popup -->
                             <div v-if="showSuccessMessage" class="fixed top-4 right-4 left-4 sm:left-auto z-50 max-w-md mx-auto sm:mx-0">
                                 <div :class="isErrorMessage ? 'bg-white border-l-4 border-red-500 rounded-lg shadow-lg p-4 flex items-center' : 'bg-white border-l-4 border-green-500 rounded-lg shadow-lg p-4 flex items-center'">
@@ -1432,16 +1432,17 @@
                             <!-- Header Section -->
                             <div class="max-w-7xl mx-auto px-2 sm:px-4">
                                 <div class="text-center mb-4 sm:mb-6 md:mb-8">
-                                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2" style="font-family: 'Cairo', sans-serif;">Create Order</h1>
+                                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2" style="font-family: 'Cairo', sans-serif;">Create Service Order</h1>
+                                    <p class="text-sm sm:text-base text-gray-500">Fill in the details below to create a new order</p>
                                 </div>
 
                                 <!-- Main Form -->
                                 <div class="space-y-4 sm:space-y-6 md:space-y-8">
                                     <!-- Customer Information Card -->
-                                    <div class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 p-4 sm:p-6">
+                                    <div class="bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-200 p-4 sm:p-6">
                                         <div class="flex items-center mb-4 sm:mb-6">
-                                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center mr-2 sm:mr-3">
-                                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                                 </svg>
                                             </div>
@@ -1534,7 +1535,7 @@
                                                             <div class="border-t border-gray-200 pt-4 mt-4">
                                                                 <button 
                                                                     @click="openCreateCustomerPopup"
-                                                                    class="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center font-semibold"
+                                                                    class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center font-medium"
                                                                 >
                                                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -1548,24 +1549,7 @@
                                             </div>
 
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-2">Company</label>
-                                                <div class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 font-medium">
-                                                    Sage Services Co Ltd.
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-2">Transaction Date *</label>
-                                                <input 
-                                                    type="date"
-                                                    v-model="salesOrder.transaction_date"
-                                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                                                    required
-                                                >
-                                            </div>
-
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Date</label>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Expected Service Date</label>
                                                 <input 
                                                     type="date"
                                                     v-model="salesOrder.delivery_date"
@@ -1617,37 +1601,37 @@
                                         </div>
                                     </div>
 
-                                                                    <!-- Items Section -->
-                                <div class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 p-4 sm:p-6" style="overflow: visible; position: relative; z-index: 10;">
+                                                                    <!-- Services Section -->
+                                <div class="bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-200 p-4 sm:p-6" style="overflow: visible; position: relative; z-index: 10;">
                                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
                                             <div class="flex items-center">
-                                                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center mr-2 sm:mr-3">
-                                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                                     </svg>
                                                 </div>
                                                 <div>
-                                                    <h2 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">Items</h2>
-                                                    <p class="text-xs sm:text-sm text-gray-600">Add items to your sales order</p>
+                                                    <h2 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">Services</h2>
+                                                    <p class="text-xs sm:text-sm text-gray-600">Add services to your order</p>
                                                 </div>
                                             </div>
                                             <button 
                                                 @click="addItem"
-                                                class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg sm:rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center text-sm sm:text-base"
+                                                class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center text-sm sm:text-base font-medium"
                                             >
                                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                                 </svg>
-                                                Add Item
+                                                Add Service
                                             </button>
                                         </div>
 
-                                        <!-- Items Table - Desktop View -->
+                                        <!-- Services Table - Desktop View -->
                                         <div class="hidden md:block overflow-x-auto">
                                             <table class="w-full table-fixed">
                                                 <thead>
-                                                    <tr class="bg-gradient-to-r from-green-50 to-yellow-50 border-b-2 border-gray-200">
-                                                        <th class="w-96 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Item</th>
+                                                    <tr class="bg-gray-50 border-b border-gray-200">
+                                                        <th class="w-96 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Service</th>
                                                         <th class="w-28 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Qty</th>
                                                         <th class="w-40 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Rate</th>
                                                         <th class="w-40 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
@@ -1664,13 +1648,13 @@
                                                                     class="border-2 border-gray-200 rounded-lg p-2 bg-white cursor-pointer hover:border-blue-300 hover:shadow-md transition-all duration-200 flex justify-between items-center w-full"
                                                                 >
                                                                     <div class="flex items-center flex-1 min-w-0">
-                                                                        <div class="w-5 h-5 bg-purple-100 rounded flex items-center justify-center mr-2 flex-shrink-0">
-                                                                            <svg class="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <div class="w-5 h-5 bg-green-100 rounded flex items-center justify-center mr-2 flex-shrink-0">
+                                                                            <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                                                             </svg>
                                                                         </div>
                                                                         <span class="text-gray-700 font-medium text-xs truncate">
-                                                                            \{\{ item.item_code ? (itemsList.find(i => i.name === item.item_code)?.item_name || item.item_code) : 'Select item...' \}\}
+                                                                            \{\{ item.item_code ? (itemsList.find(i => i.name === item.item_code)?.item_name || item.item_code) : 'Select service...' \}\}
                                                                         </span>
                                                                     </div>
                                                                     <svg class="w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ml-1" :class="showItemDropdown[index] ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1679,7 +1663,7 @@
                                                                 </div>
                                                                 
                                                                 <!-- Enhanced Dropdown Options -->
-                                                                <div v-if="showItemDropdown[index]" class="absolute z-50 left-0 mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto w-96" style="min-width: 400px;">
+                                                                <div v-if="showItemDropdown[index]" class="absolute z-50 left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto w-96" style="min-width: 400px;">
                                                                     <div class="p-4">
                                                                         <!-- Enhanced Search Box -->
                                                                         <div class="relative mb-4">
@@ -1689,8 +1673,8 @@
                                                                             <input 
                                                                                 v-model="itemSearchTerm[index]"
                                                                                 type="text"
-                                                                                placeholder="Search items..."
-                                                                                class="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                                                                placeholder="Search services..."
+                                                                                class="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                                                                             >
                                                                         </div>
                                                                         
@@ -1699,11 +1683,11 @@
                                                                             <div 
                                                                                 v-for="itemOption in getFilteredItems(index)" 
                                                                                 :key="itemOption.name"
-                                                                                @click="selectItem(itemOption, index)"
-                                                                                class="flex items-center p-3 hover:bg-purple-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-purple-200"
-                                                                            >
-                                                                                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
-                                                                                    <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                                                                    @click="selectItem(itemOption, index)"
+                                                                    class="flex items-center p-3 hover:bg-green-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-green-200"
+                                                                >
+                                                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                                                                     </svg>
                                                                                 </div>
@@ -1726,7 +1710,7 @@
                                                                             <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                                                             </svg>
-                                                                            <p class="text-sm font-medium">No items found</p>
+                                                                            <p class="text-sm font-medium">No services found</p>
                                                                             <p class="text-xs">Try adjusting your search terms</p>
                                                                         </div>
                                                                     </div>
@@ -1762,7 +1746,7 @@
                                                             <button 
                                                                 @click="removeItem(index)"
                                                                 class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200"
-                                                                title="Remove Item"
+                                                                title="Remove Service"
                                                             >
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -1774,36 +1758,36 @@
                                             </table>
                                         </div>
                                         
-                                        <!-- Items List - Mobile View -->
+                                        <!-- Services List - Mobile View -->
                                         <div class="md:hidden space-y-4">
-                                            <div v-for="(item, index) in items" :key="index" class="bg-gray-50 rounded-lg p-4 border-2 border-gray-200 relative">
+                                            <div v-for="(item, index) in items" :key="index" class="bg-white rounded-lg p-4 border border-gray-200 relative shadow-sm">
                                                 <!-- Remove Button - Top Right -->
                                                 <button 
                                                     @click="removeItem(index)"
                                                     class="absolute top-2 right-2 text-red-500 hover:text-red-700 bg-white hover:bg-red-50 p-2 rounded-lg shadow transition-all duration-200"
-                                                    title="Remove Item"
+                                                    title="Remove Service"
                                                 >
                                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                     </svg>
                                                 </button>
                                                 
-                                                <!-- Item Selection -->
+                                                <!-- Service Selection -->
                                                 <div class="mb-3 pr-10">
-                                                    <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase">Item</label>
+                                                    <label class="block text-xs font-medium text-gray-600 mb-2">Service</label>
                                                     <div class="relative">
                                                         <div 
                                                             @click="toggleItemDropdown(index)"
-                                                            class="border-2 border-gray-300 rounded-lg p-3 bg-white cursor-pointer hover:border-blue-400 transition-all duration-200 flex justify-between items-center"
+                                                            class="border border-gray-300 rounded-lg p-3 bg-white cursor-pointer hover:border-green-500 transition-all duration-200 flex justify-between items-center"
                                                         >
                                                             <div class="flex items-center flex-1 min-w-0">
-                                                                <div class="w-6 h-6 bg-purple-100 rounded flex items-center justify-center mr-2 flex-shrink-0">
-                                                                    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <div class="w-6 h-6 bg-green-100 rounded flex items-center justify-center mr-2 flex-shrink-0">
+                                                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                                                     </svg>
                                                                 </div>
                                                                 <span class="text-gray-700 font-medium text-sm truncate">
-                                                                    \{\{ item.item_code ? (itemsList.find(i => i.name === item.item_code)?.item_name || item.item_code) : 'Select item...' \}\}
+                                                                    \{\{ item.item_code ? (itemsList.find(i => i.name === item.item_code)?.item_name || item.item_code) : 'Select service...' \}\}
                                                                 </span>
                                                             </div>
                                                             <svg class="w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ml-2" :class="showItemDropdown[index] ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1811,8 +1795,8 @@
                                                             </svg>
                                                         </div>
                                                         
-                                                        <!-- Item Dropdown -->
-                                                        <div v-if="showItemDropdown[index]" class="absolute z-50 left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
+                                                        <!-- Service Dropdown -->
+                                                        <div v-if="showItemDropdown[index]" class="absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
                                                             <div class="p-4">
                                                                 <div class="relative mb-4">
                                                                     <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1821,8 +1805,8 @@
                                                                     <input 
                                                                         v-model="itemSearchTerm[index]"
                                                                         type="text"
-                                                                        placeholder="Search items..."
-                                                                        class="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                        placeholder="Search services..."
+                                                                        class="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                                                     >
                                                                 </div>
                                                                 <div class="space-y-2 max-h-60 overflow-y-auto">
@@ -1830,10 +1814,10 @@
                                                                         v-for="itemOption in getFilteredItems(index)" 
                                                                         :key="itemOption.name"
                                                                         @click="selectItem(itemOption, index)"
-                                                                        class="flex items-center p-3 hover:bg-purple-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-purple-200"
+                                                                        class="flex items-center p-3 hover:bg-green-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-green-200"
                                                                     >
-                                                                        <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                                                                            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                                                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                                                             </svg>
                                                                         </div>
@@ -1858,36 +1842,36 @@
                                                 <!-- Quantity and Rate - Side by Side -->
                                                 <div class="grid grid-cols-2 gap-3 mb-3">
                                                     <div>
-                                                        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase">Quantity</label>
+                                                        <label class="block text-xs font-medium text-gray-600 mb-2">Quantity</label>
                                                         <input 
                                                             type="number"
                                                             v-model="item.qty"
                                                             @input="calculateItemAmount(item)"
                                                             min="1"
                                                             step="1"
-                                                            class="w-full px-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
+                                                            class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base"
                                                             placeholder="Qty"
                                                         >
                                                     </div>
                                                     <div>
-                                                        <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase">Rate (SAR)</label>
+                                                        <label class="block text-xs font-medium text-gray-600 mb-2">Rate (SAR)</label>
                                                         <input 
                                                             type="number"
                                                             v-model="item.rate"
                                                             @input="calculateItemAmount(item)"
                                                             min="0"
                                                             step="0.01"
-                                                            class="w-full px-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
+                                                            class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base"
                                                             placeholder="Rate"
                                                         >
                                                     </div>
                                                 </div>
                                                 
                                                 <!-- Amount Display -->
-                                                <div class="bg-green-50 border-2 border-green-200 rounded-lg p-3">
+                                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                                     <div class="flex justify-between items-center">
-                                                        <span class="text-sm font-semibold text-gray-700">Amount:</span>
-                                                        <span class="text-lg font-bold text-green-700">
+                                                        <span class="text-sm font-medium text-gray-600">Amount:</span>
+                                                        <span class="text-lg font-semibold text-green-600">
                                                             \{\{ (item.net_amount || 0).toLocaleString('en-US', { style: 'currency', currency: 'SAR' }) \}\}
                                                         </span>
                                                     </div>
@@ -1897,22 +1881,22 @@
 
                                         <!-- Totals Section -->
                                         <div class="mt-4 sm:mt-6 flex justify-end">
-                                            <div class="bg-gradient-to-r from-green-50 to-yellow-50 rounded-lg sm:rounded-xl p-4 sm:p-6 border border-green-200 w-full sm:w-auto">
+                                            <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 border border-gray-200 w-full sm:w-auto shadow-sm">
                                                 <div class="space-y-2 sm:space-y-3">
                                                     <div class="flex justify-between items-center gap-4">
-                                                        <span class="text-sm sm:text-lg font-medium text-gray-700">Total Amount:</span>
-                                                        <span class="text-base sm:text-xl font-bold text-green-700">
+                                                        <span class="text-sm sm:text-base font-medium text-gray-600">Total Amount:</span>
+                                                        <span class="text-base sm:text-lg font-semibold text-gray-800">
                                                             \{\{ (totalAmount || 0).toLocaleString('en-US', { style: 'currency', currency: 'SAR' }) \}\}
                                                         </span>
                                                     </div>
                                                     <div class="flex justify-between items-center gap-4">
-                                                        <span class="text-sm sm:text-lg font-medium text-gray-700">VAT (15%):</span>
-                                                        <span class="text-base sm:text-xl font-bold text-blue-700">
+                                                        <span class="text-sm sm:text-base font-medium text-gray-600">VAT (15%):</span>
+                                                        <span class="text-base sm:text-lg font-semibold text-gray-800">
                                                             \{\{ (vatAmount || 0).toLocaleString('en-US', { style: 'currency', currency: 'SAR' }) \}\}
                                                         </span>
                                                     </div>
-                                                    <div class="flex justify-between items-center gap-4 border-t border-green-200 pt-2 sm:pt-3">
-                                                        <span class="text-base sm:text-xl font-semibold text-gray-800">Grand Total:</span>
+                                                    <div class="flex justify-between items-center gap-4 border-t border-gray-200 pt-2 sm:pt-3">
+                                                        <span class="text-base sm:text-lg font-semibold text-gray-800">Grand Total:</span>
                                                         <span class="text-lg sm:text-2xl font-bold text-green-600">
                                                             \{\{ (grandTotal || 0).toLocaleString('en-US', { style: 'currency', currency: 'SAR' }) \}\}
                                                         </span>
@@ -1923,28 +1907,29 @@
                                     </div>
 
                                     <!-- Action Buttons -->
-                                    <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                                        <button 
-                                            @click="resetForm"
-                                            class="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg sm:rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center font-semibold text-base sm:text-lg"
-                                        >
-                                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                            </svg>
-                                            Reset Form
-                                        </button>
+                                    <div class="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
+                                        <div class="flex flex-col sm:flex-row justify-center gap-3">
+                                            <button 
+                                                @click="resetForm"
+                                                class="w-full sm:w-auto px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 flex items-center justify-center font-medium text-base"
+                                            >
+                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                </svg>
+                                                Reset Form
+                                            </button>
                                         
                                         <!-- Download PDF Button - Only show after successful Sales Order creation -->
                                         <button 
                                             v-if="lastCreatedSalesOrder"
                                             @click="downloadSalesOrderPDF"
                                             :disabled="downloadingPDF"
-                                            class="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center font-semibold text-base sm:text-lg"
+                                            class="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium text-base"
                                         >
-                                            <svg v-if="!downloadingPDF" class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg v-if="!downloadingPDF" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                             </svg>
-                                            <div v-else class="w-6 h-6 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                             \{\{ downloadingPDF ? 'Downloading...' : 'Download PDF' \}\}
                                         </button>
                                         
@@ -1952,9 +1937,9 @@
                                         <button 
                                             v-if="lastCreatedSalesOrder"
                                             @click="openCreatePaymentPopup"
-                                            class="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center font-semibold text-base sm:text-lg"
+                                            class="w-full sm:w-auto px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 flex items-center justify-center font-medium text-base"
                                         >
-                                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                             </svg>
                                             Create Payment
@@ -1965,26 +1950,27 @@
                                             v-if="lastCreatedSalesOrder"
                                             @click="sendEmail"
                                             :disabled="sendingEmail"
-                                            class="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg sm:rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center font-semibold text-base sm:text-lg"
+                                            class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium text-base"
                                         >
-                                            <svg v-if="!sendingEmail" class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg v-if="!sendingEmail" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v10a2 2 0 002 2z"></path>
                                             </svg>
-                                            <div v-else class="w-6 h-6 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                             \{\{ sendingEmail ? 'Sending Email...' : 'Send Email' \}\}
                                         </button>
                                         
                                         <button 
                                             @click="saveSalesOrder"
                                             :disabled="saving"
-                                            class="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg sm:rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center font-semibold text-base sm:text-lg"
+                                            class="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold text-base shadow-md hover:shadow-lg"
                                         >
-                                            <svg v-if="!saving" class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg v-if="!saving" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
-                                            <div v-else class="w-6 h-6 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            \{\{ saving ? 'Creating Sales Order...' : 'Create Order' \}\}
+                                            <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            \{\{ saving ? 'Creating Order...' : 'Create Order' \}\}
                                         </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1992,19 +1978,19 @@
                         
                         <!-- Create Customer Popup Modal -->
                         <div v-if="showCreateCustomerPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-                            <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                            <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
                                 <div class="p-4 sm:p-6">
                                     <!-- Modal Header -->
-                                    <div class="flex items-center justify-between mb-6">
+                                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                                         <div class="flex items-center">
-                                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
+                                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                                 </svg>
                                             </div>
-                                            <h2 class="text-2xl font-bold text-gray-800">Create New Customer</h2>
+                                            <h2 class="text-xl sm:text-2xl font-semibold text-gray-800">Create New Customer</h2>
                                         </div>
-                                        <button @click="closeCreateCustomerPopup" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                        <button @click="closeCreateCustomerPopup" class="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors">
                                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                             </svg>
@@ -2284,23 +2270,23 @@
                                     </div>
                                     
                                     <!-- Modal Footer -->
-                                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
                                         <button 
                                             @click="closeCreateCustomerPopup"
-                                            class="px-6 py-3 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-all duration-200 font-semibold"
+                                            class="w-full sm:w-auto px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium"
                                         >
                                             Cancel
                                         </button>
                                         <button 
                                             @click="createNewCustomer"
                                             :disabled="creatingCustomer || !newCustomer.customer_name"
-                                            class="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center font-semibold"
+                                            class="w-full sm:w-auto px-8 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium"
                                         >
                                             <svg v-if="!creatingCustomer" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
                                             <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            \{\{ creatingCustomer ? 'Creating Customer...' : 'Create Customer' \}\}
+                                            \{\{ creatingCustomer ? 'Creating...' : 'Create Customer' \}\}
                                         </button>
                                     </div>
                                 </div>
@@ -2309,19 +2295,19 @@
                         
                         <!-- Create Payment Popup Modal -->
                         <div v-if="showCreatePaymentPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-                            <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                            <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
                                 <div class="p-4 sm:p-6">
                                     <!-- Modal Header -->
-                                    <div class="flex items-center justify-between mb-6">
+                                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                                         <div class="flex items-center">
-                                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-3">
+                                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                                 </svg>
                                             </div>
-                                            <h2 class="text-2xl font-bold text-gray-800">Create Payment Entry</h2>
+                                            <h2 class="text-xl sm:text-2xl font-semibold text-gray-800">Create Payment Entry</h2>
                                         </div>
-                                        <button @click="closeCreatePaymentPopup" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                        <button @click="closeCreatePaymentPopup" class="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors">
                                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                             </svg>
@@ -2370,23 +2356,23 @@
                                     </div>
                                     
                                     <!-- Modal Footer -->
-                                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
                                         <button 
                                             @click="closeCreatePaymentPopup"
-                                            class="px-6 py-3 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-all duration-200 font-semibold"
+                                            class="w-full sm:w-auto px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium"
                                         >
                                             Cancel
                                         </button>
                                         <button 
                                             @click="createPaymentEntry"
                                             :disabled="creatingPayment || !newPayment.mode_of_payment"
-                                            class="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center font-semibold"
+                                            class="w-full sm:w-auto px-8 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium"
                                         >
                                             <svg v-if="!creatingPayment" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
                                             <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            \{\{ creatingPayment ? 'Creating Payment...' : 'Create Payment Entry' \}\}
+                                            \{\{ creatingPayment ? 'Creating...' : 'Create Payment Entry' \}\}
                                         </button>
                                     </div>
                                 </div>
