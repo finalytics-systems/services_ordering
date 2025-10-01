@@ -1057,3 +1057,74 @@ def download_sales_order_pdf(sales_order_name):
     except Exception as e:
         frappe.log_error(f"Error generating sales order PDF: {str(e)}", "Sales Order Form - Download PDF")
         return {"success": False, "message": f"Error generating PDF: {str(e)}"}
+
+@frappe.whitelist(allow_guest=True)
+def get_cleaning_teams_list():
+    """Get list of all cleaning teams for availability viewer"""
+    try:
+        teams = frappe.get_all(
+            "Cleaning Team",
+            fields=["name", "name1"],
+            order_by="name asc"
+        )
+        return {"success": True, "data": teams}
+    except Exception as e:
+        frappe.log_error(f"Error fetching cleaning teams list: {str(e)}", "Sales Order Form - Get Teams")
+        return {"success": False, "message": str(e)}
+
+@frappe.whitelist(allow_guest=True)
+def get_team_availability(team_name, date=None):
+    """Get team availability for a specific date"""
+    try:
+        if not team_name:
+            return {"success": False, "message": "Team name is required"}
+        
+        # Check if team exists
+        if not frappe.db.exists("Cleaning Team", team_name):
+            return {"success": False, "message": "Team not found"}
+        
+        # Get team document with shifts
+        team_doc = frappe.get_doc("Cleaning Team", team_name)
+        
+        # Get shifts
+        shifts = []
+        if hasattr(team_doc, 'shifts') and team_doc.shifts:
+            for shift in team_doc.shifts:
+                shifts.append({
+                    "start_time": shift.start_time,
+                    "end_time": shift.end_time
+                })
+        
+        # Use provided date or today
+        from frappe.utils import nowdate
+        target_date = date if date else nowdate()
+        
+        # Get appointments for this team on the target date using between filter
+        appointments = frappe.get_all(
+            "Service Appointment",
+            fields=["name", "appointment_date_time", "appointment_end_time", "customer", "total_service_time"],
+            filters={
+                "service_team": team_name,
+                "docstatus": ["!=", 2],  # Not cancelled
+                "appointment_date_time": ["between", [target_date + " 00:00:00", target_date + " 23:59:59"]]
+            }
+        )
+        
+        # Get team members count
+        team_members_count = len(team_doc.team_members) if hasattr(team_doc, 'team_members') and team_doc.team_members else 0
+        
+        return {
+            "success": True,
+            "data": {
+                "team_name": team_doc.name1 if hasattr(team_doc, 'name1') else team_name,
+                "team_id": team_name,
+                "team_members_count": team_members_count,
+                "shifts": shifts,
+                "appointments": appointments,
+                "date": target_date
+            }
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error fetching team availability: {str(e)}", "Sales Order Form - Get Team Availability")
+        return {"success": False, "message": str(e)}
