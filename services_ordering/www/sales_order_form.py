@@ -785,11 +785,12 @@ def create_customer(customer_data):
         customer.insert(ignore_permissions=True)
         
         # Create address if address information is provided
-        if any([customer_data.get("address_line1"), customer_data.get("city"), customer_data.get("state")]):
+        if any([customer_data.get("address_line1"), customer_data.get("neighborhood"), customer_data.get("city"), customer_data.get("state")]):
             address = frappe.new_doc("Address")
             address.address_title = customer.customer_name
             address.address_type = "Billing"
             address.address_line1 = customer_data.get("address_line1", "")
+            address.address_line2 = customer_data.get("neighborhood", "")  # Store neighborhood in address_line2
             address.city = customer_data.get("city", "")
             address.state = customer_data.get("state", "")
             address.country = customer_data.get("country", "Saudi Arabia")
@@ -835,12 +836,24 @@ def create_customer(customer_data):
                 contact_created = True
                 contact_name = contact.name
                 
+                # Commit the contact to database first
+                frappe.db.commit()
+                
                 # Update the customer to set primary contact
                 if contact_created:
-                    frappe.db.set_value("Customer", customer.name, "customer_primary_contact", contact.name)
-                    frappe.db.set_value("Customer", customer.name, "customer_primary_contact_name", contact.first_name)
-                    frappe.db.set_value("Customer", customer.name, "mobile_no", customer_data.get("mobile_no"))
-                    frappe.db.set_value("Customer", customer.name, "email_id", customer_data.get("email_id"))
+                    # Reload customer to ensure we have the latest data
+                    customer.reload()
+                    
+                    # Set primary contact fields
+                    customer.customer_primary_contact = contact.name
+                    customer.mobile_no = customer_data.get("mobile_no")
+                    customer.email_id = customer_data.get("email_id")
+                    
+                    # Save the customer to trigger all validations and computed fields
+                    customer.save(ignore_permissions=True)
+                    
+                    # Commit again to ensure everything is saved
+                    frappe.db.commit()
                 
                 frappe.log_error(f"Contact created successfully for customer {customer.name}: {contact.name} with email {customer_data.get('email_id')}", "Customer Creation Debug")
                 
