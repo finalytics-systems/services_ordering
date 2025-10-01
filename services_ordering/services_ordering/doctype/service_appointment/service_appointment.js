@@ -181,14 +181,14 @@ function render_calendar_view(frm, team, appointments) {
 					</div>
 				</div>
 				
-				<div class="summary-card duty-card">
-					<div class="summary-icon duty-icon">⏰</div>
-					<div class="summary-content">
-						<div class="summary-label">Working Hours</div>
-						<div class="summary-value">${shifts.length} shift${shifts.length > 1 ? 's' : ''}</div>
-						<div class="summary-detail">${total_working_hours} hours, ${getScheduleStructure(shifts).break_periods.length} break${getScheduleStructure(shifts).break_periods.length !== 1 ? 's' : ''}</div>
-					</div>
+							<div class="summary-card duty-card">
+				<div class="summary-icon duty-icon">⏰</div>
+				<div class="summary-content">
+					<div class="summary-label">Working Hours</div>
+					<div class="summary-value">${shifts.length} shift${shifts.length > 1 ? 's' : ''}</div>
+					<div class="summary-detail">${total_working_hours} hours, ${getScheduleStructure(shifts).break_periods.filter(b => b.type === 'between').length} break${getScheduleStructure(shifts).break_periods.filter(b => b.type === 'between').length !== 1 ? 's' : ''}</div>
 				</div>
+			</div>
 				
 				<div class="summary-card service-card">
 					<div class="summary-icon service-icon">🕒</div>
