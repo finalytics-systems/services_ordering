@@ -387,6 +387,14 @@
                             payment_slip_file: null,
                             payment_slip_filename: ''
                         });
+                        
+                        // Team availability viewer
+                        const showTeamAvailabilityPopup = ref(false);
+                        const loadingTeamAvailability = ref(false);
+                        const selectedTeamForViewing = ref('');
+                        const selectedDateForViewing = ref(new Date().toISOString().split('T')[0]);
+                        const teamAvailabilityData = ref(null);
+                        const availableTeamsList = ref([]);
 
                         // Add new item to the items list
                         const addItem = () => {
@@ -847,6 +855,100 @@
                             } finally {
                                 downloadingPDF.value = false;
                             }
+                        };
+                        
+                        // Team availability viewer functions
+                        const openTeamAvailabilityPopup = async () => {
+                            showTeamAvailabilityPopup.value = true;
+                            // Fetch teams list
+                            try {
+                                const response = await frappe.call({
+                                    method: "services_ordering.www.sales_order_form.get_cleaning_teams_list"
+                                });
+                                if (response && response.message && response.message.success) {
+                                    availableTeamsList.value = response.message.data || [];
+                                }
+                            } catch (error) {
+                                console.error('Error fetching teams:', error);
+                            }
+                        };
+                        
+                        const closeTeamAvailabilityPopup = () => {
+                            showTeamAvailabilityPopup.value = false;
+                            selectedTeamForViewing.value = '';
+                            teamAvailabilityData.value = null;
+                        };
+                        
+                        const fetchTeamAvailability = async () => {
+                            if (!selectedTeamForViewing.value) {
+                                showMessage('Please select a team', true);
+                                return;
+                            }
+                            
+                            try {
+                                loadingTeamAvailability.value = true;
+                                const response = await frappe.call({
+                                    method: "services_ordering.www.sales_order_form.get_team_availability",
+                                    args: {
+                                        team_name: selectedTeamForViewing.value,
+                                        date: selectedDateForViewing.value
+                                    }
+                                });
+                                
+                                if (response && response.message && response.message.success) {
+                                    teamAvailabilityData.value = response.message.data;
+                                } else {
+                                    showMessage('Error loading team availability', true);
+                                }
+                            } catch (error) {
+                                console.error('Error fetching team availability:', error);
+                                showMessage('Error loading team availability: ' + error.message, true);
+                            } finally {
+                                loadingTeamAvailability.value = false;
+                            }
+                        };
+                        
+                        // Helper function to check if a time slot is booked
+                        const isTimeSlotBooked = (hour) => {
+                            if (!teamAvailabilityData.value || !teamAvailabilityData.value.appointments) return false;
+                            
+                            return teamAvailabilityData.value.appointments.some(appointment => {
+                                try {
+                                    const startDate = new Date(appointment.appointment_date_time);
+                                    const startHour = startDate.getHours();
+                                    const duration = appointment.total_service_time || 1;
+                                    const endHour = startHour + duration;
+                                    
+                                    return hour >= startHour && hour < endHour;
+                                } catch (e) {
+                                    return false;
+                                }
+                            });
+                        };
+                        
+                        // Helper function to check if hour is in working shift
+                        const isInWorkingShift = (hour) => {
+                            if (!teamAvailabilityData.value || !teamAvailabilityData.value.shifts) return false;
+                            
+                            return teamAvailabilityData.value.shifts.some(shift => {
+                                const startHour = parseInt(shift.start_time.split(':')[0]);
+                                const endHour = parseInt(shift.end_time.split(':')[0]);
+                                return hour >= startHour && hour < endHour;
+                            });
+                        };
+                        
+                        // Helper function to get time slots for display
+                        const getTimeSlots = () => {
+                            const slots = [];
+                            for (let hour = 0; hour < 24; hour++) {
+                                slots.push(hour);
+                            }
+                            return slots;
+                        };
+                        
+                        // Helper function to format hour for display
+                        const formatHour = (hour) => {
+                            return `${hour.toString().padStart(2, '0')}:00`;
                         };
 
                         // Test backend connection with retry and enhanced error handling
@@ -1396,6 +1498,20 @@
                             createPaymentEntry,
                             handlePaymentFileUpload,
                             downloadSalesOrderPDF,
+                            // Team availability viewer
+                            showTeamAvailabilityPopup,
+                            loadingTeamAvailability,
+                            selectedTeamForViewing,
+                            selectedDateForViewing,
+                            teamAvailabilityData,
+                            availableTeamsList,
+                            openTeamAvailabilityPopup,
+                            closeTeamAvailabilityPopup,
+                            fetchTeamAvailability,
+                            isTimeSlotBooked,
+                            isInWorkingShift,
+                            getTimeSlots,
+                            formatHour,
                             // Time formatting - temporarily disabled
                             // formatTimeTo24Hour
                         };
@@ -1556,6 +1672,19 @@
                                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                                                 >
                                             </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Team Availability</label>
+                                                <button 
+                                                    @click="openTeamAvailabilityPopup"
+                                                    class="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center justify-center font-medium"
+                                                >
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    Check Team Schedule
+                                                </button>
+                                            </div>
 
                                             <!-- Time dropdown temporarily disabled
                                             <div>
@@ -1627,7 +1756,7 @@
                                         </div>
 
                                         <!-- Services Table - Desktop View -->
-                                        <div class="hidden md:block overflow-x-auto">
+                                        <div class="hidden md:block overflow-visible">
                                             <table class="w-full table-fixed">
                                                 <thead>
                                                     <tr class="bg-gray-50 border-b border-gray-200">
@@ -1663,7 +1792,7 @@
                                                                 </div>
                                                                 
                                                                 <!-- Enhanced Dropdown Options -->
-                                                                <div v-if="showItemDropdown[index]" class="absolute z-50 left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto w-96" style="min-width: 400px;">
+                                                                <div v-if="showItemDropdown[index]" class="absolute z-[9999] left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl w-96" style="min-width: 400px; position: fixed; top: auto; left: auto;">
                                                                     <div class="p-4">
                                                                         <!-- Enhanced Search Box -->
                                                                         <div class="relative mb-4">
@@ -2090,6 +2219,83 @@
                                             
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                                                    <div class="relative">
+                                                        <!-- City Dropdown -->
+                                                        <div 
+                                                            @click="toggleCityDropdown"
+                                                            class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:border-green-400 hover:shadow-md transition-all duration-200 flex justify-between items-center"
+                                                        >
+                                                            <div class="flex items-center">
+                                                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                                                    <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                <span class="text-gray-700 font-medium">
+                                                                    \{\{ newCustomer.city ? (cities.find(c => c.city === newCustomer.city)?.city || newCustomer.city) : 'Select city...' \}\}
+                                                                </span>
+                                                            </div>
+                                                            <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="showCityDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+                                                        
+                                                        <!-- City Dropdown Options -->
+                                                        <div v-if="showCityDropdown" class="absolute z-30 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
+                                                            <div class="p-4">
+                                                                <!-- Search Box -->
+                                                                <div class="relative mb-4">
+                                                                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                                                    </svg>
+                                                                    <input 
+                                                                        v-model="citySearchTerm"
+                                                                        type="text"
+                                                                        placeholder="Search cities..."
+                                                                        class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all duration-200"
+                                                                    >
+                                                                </div>
+                                                                
+                                                                <!-- Options List -->
+                                                                <div class="space-y-2">
+                                                                    <!-- City options -->
+                                                                    <div 
+                                                                        v-for="city in filteredCities" 
+                                                                        :key="city.city"
+                                                                        @click="selectCity(city, $event)"
+                                                                        class="flex items-center p-3 hover:bg-purple-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-purple-200"
+                                                                    >
+                                                                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                                                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                                            </svg>
+                                                                        </div>
+                                                                        <div class="flex-1">
+                                                                            <div class="font-semibold text-gray-900 text-base">\{\{ city.city \}\}</div>
+                                                                            <div class="text-sm text-gray-600 mt-1">
+                                                                                <span v-if="city.state" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                                                    📍 \{\{ city.state \}\}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <!-- No Results Message -->
+                                                                <div v-if="filteredCities.length === 0 && citySearchTerm" class="text-center py-8 text-gray-500">
+                                                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                                    </svg>
+                                                                    <p class="text-lg font-medium">No cities found</p>
+                                                                    <p class="text-sm">Try adjusting your search terms</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div>
                                                     <label class="block text-sm font-medium text-gray-700 mb-2">Neighborhood</label>
                                                     <div class="relative">
                                                         <!-- Neighborhood Dropdown -->
@@ -2178,93 +2384,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
-                                                    <div class="relative">
-                                                        <!-- City Dropdown -->
-                                                        <div 
-                                                            @click="toggleCityDropdown"
-                                                            class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:border-green-400 hover:shadow-md transition-all duration-200 flex justify-between items-center"
-                                                        >
-                                                            <div class="flex items-center">
-                                                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                                                    <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                                    </svg>
-                                                                </div>
-                                                                <span class="text-gray-700 font-medium">
-                                                                    \{\{ newCustomer.city ? (cities.find(c => c.city === newCustomer.city)?.city || newCustomer.city) : 'Select city...' \}\}
-                                                                </span>
-                                                            </div>
-                                                            <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="showCityDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                            </svg>
-                                                        </div>
-                                                        
-                                                        <!-- City Dropdown Options -->
-                                                        <div v-if="showCityDropdown" class="absolute z-30 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
-                                                            <div class="p-4">
-                                                                <!-- Search Box -->
-                                                                <div class="relative mb-4">
-                                                                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                                                    </svg>
-                                                                    <input 
-                                                                        v-model="citySearchTerm"
-                                                                        type="text"
-                                                                        placeholder="Search cities..."
-                                                                        class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all duration-200"
-                                                                    >
-                                                                </div>
-                                                                
-                                                                <!-- Options List -->
-                                                                <div class="space-y-2">
-                                                                    <!-- City options -->
-                                                                    <div 
-                                                                        v-for="city in filteredCities" 
-                                                                        :key="city.city"
-                                                                        @click="selectCity(city, $event)"
-                                                                        class="flex items-center p-3 hover:bg-purple-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-purple-200"
-                                                                    >
-                                                                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                                                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                                            </svg>
-                                                                        </div>
-                                                                        <div class="flex-1">
-                                                                            <div class="font-semibold text-gray-900 text-base">\{\{ city.city \}\}</div>
-                                                                            <div class="text-sm text-gray-600 mt-1">
-                                                                                <span v-if="city.state" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                                                                    📍 \{\{ city.state \}\}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <!-- No Results Message -->
-                                                                <div v-if="filteredCities.length === 0 && citySearchTerm" class="text-center py-8 text-gray-500">
-                                                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                                    </svg>
-                                                                    <p class="text-lg font-medium">No cities found</p>
-                                                                    <p class="text-sm">Try adjusting your search terms</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                                                <input 
-                                                    v-model="newCustomer.country"
-                                                    type="text"
-                                                    placeholder="Enter country"
-                                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                                                >
                                             </div>
                                         </div>
                                     </div>
@@ -2373,6 +2492,149 @@
                                             </svg>
                                             <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                             \{\{ creatingPayment ? 'Creating...' : 'Create Payment Entry' \}\}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Team Availability Viewer Popup Modal -->
+                        <div v-if="showTeamAvailabilityPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4" style="overflow-y: auto;">
+                            <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[95vh] overflow-y-auto my-4">
+                                <div class="p-4 sm:p-6">
+                                    <!-- Modal Header -->
+                                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h2 class="text-xl sm:text-2xl font-semibold text-gray-800">Team Availability Viewer</h2>
+                                                <p class="text-sm text-gray-500">View team schedules and availability</p>
+                                            </div>
+                                        </div>
+                                        <button @click="closeTeamAvailabilityPopup" class="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Team and Date Selection -->
+                                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Team *</label>
+                                                <select 
+                                                    v-model="selectedTeamForViewing"
+                                                    @change="fetchTeamAvailability"
+                                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                >
+                                                    <option value="">Choose a team...</option>
+                                                    <option v-for="team in availableTeamsList" :key="team.name" :value="team.name">
+                                                        \{\{ team.name1 || team.name \}\}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Date *</label>
+                                                <input 
+                                                    type="date"
+                                                    v-model="selectedDateForViewing"
+                                                    @change="fetchTeamAvailability"
+                                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Loading State -->
+                                    <div v-if="loadingTeamAvailability" class="text-center py-12">
+                                        <div class="inline-block w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                                        <p class="mt-4 text-gray-600">Loading team schedule...</p>
+                                    </div>
+                                    
+                                    <!-- Team Availability Display -->
+                                    <div v-else-if="teamAvailabilityData">
+                                        <!-- Hour-by-Hour Timeline -->
+                                        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                            <div class="bg-gradient-to-r from-green-600 to-green-700 text-white p-4">
+                                                <h3 class="font-semibold text-lg">24-Hour Timeline</h3>
+                                                <p class="text-sm text-green-100">\{\{ teamAvailabilityData.team_name \}\} - \{\{ new Date(selectedDateForViewing).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) \}\}</p>
+                                            </div>
+                                            
+                                            <!-- Time Slots Grid -->
+                                            <div class="p-4 max-h-96 overflow-y-auto">
+                                                <div v-if="teamAvailabilityData.shifts.length === 0" class="text-center py-8 text-gray-500">
+                                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <p class="font-medium">No shifts configured</p>
+                                                    <p class="text-sm">This team has no working hours set up</p>
+                                                </div>
+                                                
+                                                <div v-else class="space-y-2">
+                                                    <div v-for="hour in getTimeSlots()" :key="hour" 
+                                                         v-show="isInWorkingShift(hour)"
+                                                         class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200"
+                                                         :class="{
+                                                             'bg-green-50 border-green-300': !isTimeSlotBooked(hour),
+                                                             'bg-red-50 border-red-300': isTimeSlotBooked(hour)
+                                                         }"
+                                                    >
+                                                        <!-- Time Display -->
+                                                        <div class="w-24 font-mono font-semibold text-gray-700">
+                                                            \{\{ formatHour(hour) \}\}
+                                                        </div>
+                                                        
+                                                        <!-- Status Indicator -->
+                                                        <div class="flex-1 flex items-center gap-3">
+                                                            <!-- Visual Bar -->
+                                                            <div class="flex-1 h-10 rounded-lg flex items-center px-4"
+                                                                 :class="{
+                                                                     'bg-green-500': !isTimeSlotBooked(hour),
+                                                                     'bg-red-500': isTimeSlotBooked(hour)
+                                                                 }"
+                                                            >
+                                                                <span class="text-white text-sm font-semibold">
+                                                                    \{\{ isTimeSlotBooked(hour) ? '🔴 BOOKED' : '✅ AVAILABLE' \}\}
+                                                                </span>
+                                                            </div>
+                                                            
+                                                            <!-- Status Badge -->
+                                                            <div class="text-sm font-bold px-4 py-2 rounded-lg"
+                                                                 :class="{
+                                                                     'bg-green-100 text-green-700': !isTimeSlotBooked(hour),
+                                                                     'bg-red-100 text-red-700': isTimeSlotBooked(hour)
+                                                                 }"
+                                                            >
+                                                                \{\{ isTimeSlotBooked(hour) ? 'BUSY' : 'FREE' \}\}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- No Team Selected State -->
+                                    <div v-else class="text-center py-12">
+                                        <svg class="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                        <p class="text-lg font-medium text-gray-700 mb-2">Select a Team to View Availability</p>
+                                        <p class="text-sm text-gray-500">Choose a team and date from the options above</p>
+                                    </div>
+                                    
+                                    <!-- Modal Footer -->
+                                    <div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
+                                        <button 
+                                            @click="closeTeamAvailabilityPopup"
+                                            class="px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium"
+                                        >
+                                            Close
                                         </button>
                                     </div>
                                 </div>
