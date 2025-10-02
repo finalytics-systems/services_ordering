@@ -9,8 +9,10 @@
   "amended_from",
   "section_break_zzwh",
   "sales_order",
-  "service_team",
   "total_service_time",
+  "expected_service_date",
+  "expected_service_time",
+  "service_team",
   "column_break_palo",
   "customer",
   "phone_number",
@@ -59,8 +61,10 @@
   {
    "fieldname": "service_team",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Service Team",
-   "options": "Cleaning Team"
+   "options": "Cleaning Team",
+   "reqd": 1
   },
   {
    "fieldname": "appointment_date_time",
@@ -99,13 +103,27 @@
    "fieldname": "appointment_end_time",
    "fieldtype": "Datetime",
    "label": "Appointment End Time"
+  },
+  {
+   "fetch_from": "sales_order.delivery_date",
+   "fieldname": "expected_service_date",
+   "fieldtype": "Data",
+   "label": "Expected Service Date",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "sales_order.custom_time",
+   "fieldname": "expected_service_time",
+   "fieldtype": "Data",
+   "label": "Expected Service Time",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-09-29 19:41:30.432277",
+ "modified": "2025-10-02 10:15:09.794421",
  "modified_by": "Administrator",
  "module": "Services Ordering",
  "name": "Service Appointment",
