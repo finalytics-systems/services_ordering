@@ -1,12 +1,14 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "naming_series:",
  "creation": "2025-09-29 14:51:10.210223",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "section_break_seht",
   "amended_from",
+  "naming_series",
   "section_break_zzwh",
   "sales_order",
   "total_service_time",
@@ -69,7 +71,8 @@
   {
    "fieldname": "appointment_date_time",
    "fieldtype": "Datetime",
-   "label": "Appointment Date Time"
+   "label": "Appointment Date Time",
+   "read_only": 1
   },
   {
    "fieldname": "team_availability",
@@ -102,7 +105,8 @@
   {
    "fieldname": "appointment_end_time",
    "fieldtype": "Datetime",
-   "label": "Appointment End Time"
+   "label": "Appointment End Time",
+   "read_only": 1
   },
   {
    "fetch_from": "sales_order.delivery_date",
@@ -117,13 +121,20 @@
    "fieldtype": "Data",
    "label": "Expected Service Time",
    "read_only": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Naming Series",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-10-02 10:15:09.794421",
+ "modified": "2025-10-02 18:43:32.896060",
  "modified_by": "Administrator",
  "module": "Services Ordering",
  "name": "Service Appointment",
