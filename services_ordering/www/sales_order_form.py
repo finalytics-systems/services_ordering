@@ -380,9 +380,19 @@ def create_sales_order(sales_order_data):
         if sales_order_data.get("payment_terms_template"):
             sales_order.payment_terms_template = sales_order_data.get("payment_terms_template")
         
-        # Taxes and charges
-        if sales_order_data.get("taxes_and_charges"):
-            sales_order.taxes_and_charges = sales_order_data.get("taxes_and_charges")
+        # Taxes and charges - skip setting template and directly add tax row
+        # if sales_order_data.get("taxes_and_charges"):
+        #     sales_order.taxes_and_charges = sales_order_data.get("taxes_and_charges")
+        # else:
+        #     # Set the template exactly as shown in the system
+        #     sales_order.taxes_and_charges = "VAT 15%"
+        
+        # Always add the tax row directly
+        tax_row = sales_order.append("taxes", {})
+        tax_row.charge_type = "On Net Total"
+        tax_row.account_head = "KSA VAT15% - SSC"
+        tax_row.description = "VAT 15%"
+        tax_row.rate = 15
         
         # Shipping
         if sales_order_data.get("shipping_rule"):
