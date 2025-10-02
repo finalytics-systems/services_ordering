@@ -253,4 +253,12 @@ fixtures = [
             ]
         ]
     },
+    {
+        "dt": "Print Format",
+        "filters": [
+            [
+                "name", "in", ["SS Order", "SS DN"]
+            ]
+        ]
+    }
 ]
