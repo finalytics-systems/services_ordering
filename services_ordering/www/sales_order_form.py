@@ -325,18 +325,16 @@ def create_sales_order(sales_order_data):
         if sales_order_data.get("order_type"):
             sales_order.order_type = sales_order_data.get("order_type", "Sales")
         
-        # Handle new fields (time and team) - temporarily disabled
-        """
-        if sales_order_data.get("time"):
-            sales_order.custom_time = sales_order_data.get("time")
-            print(f"Setting custom_time to {sales_order_data.get('time')}")
-            frappe.log_error(f"Setting custom_time to {sales_order_data.get('time')}", "Sales Order Form - Custom Time")
+        # Handle new fields (time and team)
+        if sales_order_data.get("custom_time"):
+            sales_order.custom_time = sales_order_data.get("custom_time")
+            print(f"Setting custom_time to {sales_order_data.get('custom_time')}")
+            frappe.log_error(f"Setting custom_time to {sales_order_data.get('custom_time')}", "Sales Order Form - Custom Time")
             
         if sales_order_data.get("team"):
             sales_order.custom_team = sales_order_data.get("team")
             print(f"Setting custom_team to {sales_order_data.get('team')}")
             frappe.log_error(f"Setting custom_team to {sales_order_data.get('team')}", "Sales Order Form - Custom Team")
-        """
             
         if sales_order_data.get("source"):
             sales_order.source = sales_order_data.get("source")
@@ -445,9 +443,9 @@ def create_sales_order(sales_order_data):
                 "total_amount": total_amount,
                 "vat_amount": vat_amount,
                 "grand_total": grand_total_with_vat,
-                "status": sales_order.status
-                # "custom_time": sales_order_data.get("time"),  # Temporarily disabled
-                # "custom_team": sales_order_data.get("team")   # Temporarily disabled
+                "status": sales_order.status,
+                "custom_time": sales_order_data.get("custom_time"),
+                "custom_team": sales_order_data.get("team")
             }
         }
         
