@@ -16,7 +16,10 @@ def get_customers():
         customers = frappe.get_all(
             "Customer",
             fields=["name", "customer_name", "customer_group", "territory", "customer_type", "mobile_no", "email_id"],
-            filters={"disabled": 0},
+            filters={
+                "disabled": 0,
+                "customer_group": "Sage"
+                },
             order_by="customer_name asc",
             limit=200
         )
@@ -43,6 +46,21 @@ def get_companies():
 def get_items():
     """Get list of sales items for the dropdown"""
     try:
+        # First, get item names that have Sage Services Co Ltd. in item defaults
+        items_with_sage_company = frappe.db.sql("""
+            SELECT parent as item_code
+            FROM `tabItem Default`
+            WHERE company = 'Sage Services Co Ltd.'
+        """, as_dict=True)
+        
+        # Extract item codes from the result
+        sage_item_codes = [item.item_code for item in items_with_sage_company]
+        
+        if not sage_item_codes:
+            # Return empty list if no items found
+            return {"success": True, "data": []}
+        
+        # Get details of these items
         items = frappe.get_all(
             "Item",
             fields=[
@@ -52,7 +70,8 @@ def get_items():
             filters={
                 "disabled": 0,
                 "is_sales_item": 1,
-                "has_variants": 0  # Exclude template items
+                "has_variants": 0,  # Exclude template items
+                "name": ["in", sage_item_codes]  # Filter by item codes with Sage company
             },
             order_by="item_name asc",
             limit=500
