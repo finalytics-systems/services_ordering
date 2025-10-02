@@ -46,11 +46,11 @@ def get_companies():
 def get_items():
     """Get list of sales items for the dropdown"""
     try:
-        # First, get item names that have Sage Services Co Ltd. in item defaults
+        # First, get item names that have Sage Services Co Ltd in item defaults
         items_with_sage_company = frappe.db.sql("""
             SELECT parent as item_code
             FROM `tabItem Default`
-            WHERE company = 'Sage Services Co Ltd.'
+            WHERE company = 'Sage Services Co Ltd'
         """, as_dict=True)
         
         # Extract item codes from the result
@@ -326,7 +326,7 @@ def create_sales_order(sales_order_data):
         
         # Set basic fields with static values
         sales_order.customer = sales_order_data.get("customer")
-        sales_order.company = "Sage Services Co Ltd."  # Static company
+        sales_order.company = "Sage Services Co Ltd"  # Static company
         sales_order.currency = "SAR"  # Static currency
         sales_order.transaction_date = sales_order_data.get("transaction_date", nowdate())
         sales_order.delivery_date = sales_order_data.get("delivery_date")
@@ -668,7 +668,7 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
             <p>Thank you for your business!</p>
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="margin: 0;"><strong>Sage Services Co Ltd.</strong></p>
+                <p style="margin: 0;"><strong>Sage Services Co Ltd</strong></p>
                 <p style="margin: 5px 0; color: #666;">Your trusted business partner</p>
             </div>
         </div>
