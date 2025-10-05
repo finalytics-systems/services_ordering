@@ -148,7 +148,130 @@
     </style>
 </head>
 <body>
+    <!-- MAINTENANCE BANNER - START -->
+    <div style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #f0f4ff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    ">
+        <div style="
+            text-align: center;
+            max-width: 600px;
+            padding: 2rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e5e7eb;
+        ">
+            <!-- Maintenance Icon -->
+            <div style="
+                width: 120px;
+                height: 120px;
+                margin: 0 auto 2rem;
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: pulse 2s infinite;
+            ">
+                <svg style="width: 64px; height: 64px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </div>
+            
+            <!-- Maintenance Title -->
+            <h1 style="
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: #1f2937;
+                margin-bottom: 1rem;
+                line-height: 1.2;
+            ">Under Maintenance</h1>
+            
+            <!-- Maintenance Subtitle -->
+            <p style="
+                font-size: 1.25rem;
+                color: #6b7280;
+                margin-bottom: 2rem;
+                line-height: 1.5;
+            ">Sales Order Form is temporarily unavailable</p>
+            
+            <!-- Maintenance Message -->
+            <p style="
+                font-size: 1rem;
+                color: #4b5563;
+                margin-bottom: 2rem;
+                line-height: 1.6;
+            ">We're currently performing scheduled maintenance on our sales order system. This maintenance is necessary to improve performance and add new features.</p>
+            
+            <!-- Contact Information -->
+            <div style="
+                background: #f9fafb;
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                margin-top: 2rem;
+                border-left: 4px solid #f59e0b;
+            ">
+                <h3 style="
+                    font-size: 1.125rem;
+                    font-weight: 600;
+                    color: #1f2937;
+                    margin-bottom: 0.5rem;
+                ">Need immediate assistance?</h3>
+                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">📧 Email: support@rayaco.com</p>
+                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">📞 Phone: +966 XX XXX XXXX</p>
+                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">🕒 Business Hours: Sunday - Thursday, 8:00 AM - 6:00 PM</p>
+            </div>
+            
+            <!-- Back Link -->
+            <a href="/app" style="
+                display: inline-flex;
+                align-items: center;
+                margin-top: 2rem;
+                padding: 0.75rem 1.5rem;
+                background: #3b82f6;
+                color: white;
+                text-decoration: none;
+                border-radius: 0.5rem;
+                font-weight: 500;
+                transition: background-color 0.2s;
+            ">
+                <svg style="width: 20px; height: 20px; margin-right: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+            }
+        }
+    </style>
+    <!-- MAINTENANCE BANNER - END -->
+
+    <!-- ORIGINAL CONTENT - COMMENTED OUT FOR FUTURE USE -->
+    <!--
     <!-- Loading Screen -->
+    <!--
     <div class="loading-container" id="loadingScreen">
         <div class="text-center">
             <div class="loading-spinner"></div>
@@ -157,14 +280,20 @@
     </div>
 
     <!-- Main Content Container -->
+    <!--
     <div id="sales-order-app"></div>
 
+    <!--
     <!-- Load jQuery -->
+    <!--
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
+    <!--
     <!-- Load Vue.js -->
+    <!--
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
+    <!--
     <script>
         // Get CSRF token from cookie or meta tag
         function getCSRFToken() {
@@ -196,148 +325,33 @@
             csrf_token: '',
             call: function(options) {
                 return new Promise((resolve, reject) => {
-                    // Check if user is logged in by looking for frappe.session or cookies
-                    const isLoggedIn = (window.frappe && window.frappe.session && window.frappe.session.user && window.frappe.session.user !== 'Guest') ||
-                                     (document.cookie.includes('user_id=') && !document.cookie.includes('user_id=Guest'));
+                    // Check if user is logged in by looking for frappe.session
+                    const isLoggedIn = window.frappe && window.frappe.session && window.frappe.session.user && window.frappe.session.user !== 'Guest';
                     
-                    console.log('Making API call to:', options.method, 'with args:', options.args, 'isLoggedIn:', isLoggedIn);
+                    // First try to fetch a CSRF token if we don't have one
+                    const fetchCSRFTokenIfNeeded = () => {
+                        const csrfToken = getCSRFToken();
+                        if (csrfToken) {
+                            return Promise.resolve(csrfToken);
+                        } else {
+                            // Make a simple GET request to get the CSRF token
+                            return $.get('/api/method/frappe.www.login.get_csrf_token')
+                                .then(response => {
+                                    if (response.message) {
+                                        window.frappe.csrf_token = response.message;
+                                        return response.message;
+                                    }
+                                    return '';
+                                })
+                                .catch(() => '');
+                        }
+                    };
                     
-                    // For logged-in users, try multiple approaches
-                    if (isLoggedIn) {
-                        // Approach 1: Try with proper CSRF token from Frappe session
-                        const tryWithFrappeCSRF = () => {
-                            return new Promise((resolveCSRF, rejectCSRF) => {
-                                // Get CSRF token from Frappe session if available
-                                let csrfToken = '';
-                                if (window.frappe && window.frappe.session && window.frappe.session.csrf_token) {
-                                    csrfToken = window.frappe.session.csrf_token;
-                                } else {
-                                    csrfToken = getCSRFToken();
-                                }
-                                
-                                console.log('Trying with CSRF token for logged-in user:', csrfToken ? 'present' : 'missing');
-                                
-                                $.ajax({
-                                    url: '/api/method/' + options.method,
-                                    type: 'POST',
-                                    data: JSON.stringify(options.args || {}),
-                                    contentType: 'application/json',
-                                    headers: {
-                                        'X-Frappe-CSRF-Token': csrfToken,
-                                        'Accept': 'application/json'
-                                    },
-                                    success: function(response) {
-                                        console.log('Logged-in user API response:', response);
-                                        resolveCSRF(response);
-                                    },
-                                    error: function(xhr, status, error) {
-                                        console.log('CSRF attempt failed for logged-in user:', xhr.status);
-                                        rejectCSRF(new Error(`${error}: ${xhr.responseText}`));
-                                    }
-                                });
-                            });
-                        };
+                    fetchCSRFTokenIfNeeded().then(token => {
+                        console.log('Making API call to:', options.method, 'with args:', options.args, 'isLoggedIn:', isLoggedIn);
                         
-                        // Approach 2: Try with no CSRF (guest mode for logged-in user)
-                        const tryWithoutCSRF = () => {
-                            return new Promise((resolveNoCSRF, rejectNoCSRF) => {
-                                console.log('Trying without CSRF for logged-in user (guest mode)');
-                                $.ajax({
-                                    url: '/api/method/' + options.method + '?_noCSRF=1',
-                                    type: 'POST',
-                                    data: JSON.stringify(options.args || {}),
-                                    contentType: 'application/json',
-                                    headers: {
-                                        'Accept': 'application/json'
-                                    },
-                                    success: function(response) {
-                                        console.log('No CSRF API response for logged-in user:', response);
-                                        resolveNoCSRF(response);
-                                    },
-                                    error: function(xhr, status, error) {
-                                        console.log('No CSRF attempt failed for logged-in user:', xhr.status);
-                                        rejectNoCSRF(new Error(`${error}: ${xhr.responseText}`));
-                                    }
-                                });
-                            });
-                        };
-                        
-                        // Approach 3: Try with GET method if it's a simple test
-                        const tryWithGET = () => {
-                            return new Promise((resolveGET, rejectGET) => {
-                                if (options.method.includes('test_connection')) {
-                                    console.log('Trying GET method for test_connection');
-                                    $.ajax({
-                                        url: '/api/method/' + options.method,
-                                        type: 'GET',
-                                        headers: {
-                                            'Accept': 'application/json'
-                                        },
-                                        success: function(response) {
-                                            console.log('GET API response:', response);
-                                            resolveGET(response);
-                                        },
-                                        error: function(xhr, status, error) {
-                                            console.log('GET attempt failed:', xhr.status);
-                                            rejectGET(new Error(`${error}: ${xhr.responseText}`));
-                                        }
-                                    });
-                                } else {
-                                    rejectGET(new Error('GET method not applicable'));
-                                }
-                            });
-                        };
-                        
-                        // Try approaches in sequence
-                        tryWithFrappeCSRF()
-                            .then(response => {
-                                if (options.callback) {
-                                    options.callback(response);
-                                }
-                                resolve(response);
-                            })
-                            .catch(() => {
-                                return tryWithoutCSRF();
-                            })
-                            .then(response => {
-                                if (options.callback) {
-                                    options.callback(response);
-                                }
-                                resolve(response);
-                            })
-                            .catch(() => {
-                                return tryWithGET();
-                            })
-                            .then(response => {
-                                if (options.callback) {
-                                    options.callback(response);
-                                }
-                                resolve(response);
-                            })
-                            .catch(error => {
-                                console.error('All approaches failed for logged-in user:', error);
-                                reject(error);
-                            });
-                    } else {
-                        // For guest users, try with CSRF token first, then without
-                        const fetchCSRFTokenIfNeeded = () => {
-                            const csrfToken = getCSRFToken();
-                            if (csrfToken) {
-                                return Promise.resolve(csrfToken);
-                            } else {
-                                return $.get('/api/method/frappe.www.login.get_csrf_token')
-                                    .then(response => {
-                                        if (response.message) {
-                                            window.frappe.csrf_token = response.message;
-                                            return response.message;
-                                        }
-                                        return '';
-                                    })
-                                    .catch(() => '');
-                            }
-                        };
-                        
-                        fetchCSRFTokenIfNeeded().then(token => {
+                        // For logged-in users, try with CSRF token first
+                        if (isLoggedIn) {
                             $.ajax({
                                 url: '/api/method/' + options.method,
                                 type: 'POST',
@@ -348,14 +362,83 @@
                                     'Accept': 'application/json'
                                 },
                                 success: function(response) {
-                                    console.log('Guest API response:', response);
+                                    console.log('API response:', response);
                                     if (options.callback) {
                                         options.callback(response);
                                     }
                                     resolve(response);
                                 },
                                 error: function(xhr, status, error) {
-                                    console.log('Guest CSRF attempt failed, trying without CSRF');
+                                    console.error('Logged-in API call failed:', {
+                                        status: status,
+                                        error: error,
+                                        responseText: xhr.responseText,
+                                        statusCode: xhr.status
+                                    });
+                                    
+                                    // If CSRF fails for logged-in user, try without CSRF (guest access)
+                                    if (xhr.responseText && xhr.responseText.includes('CSRFTokenError')) {
+                                        console.log('CSRF token error for logged-in user. Attempting guest access...');
+                                        $.ajax({
+                                            url: '/api/method/' + options.method + '?_noCSRF=1',
+                                            type: 'POST',
+                                            data: JSON.stringify(options.args || {}),
+                                            contentType: 'application/json',
+                                            headers: {
+                                                'Accept': 'application/json'
+                                            },
+                                            success: function(response) {
+                                                console.log('Guest API response for logged-in user:', response);
+                                                if (options.callback) {
+                                                    options.callback(response);
+                                                }
+                                                resolve(response);
+                                            },
+                                            error: function(innerXhr, innerStatus, innerError) {
+                                                console.error('Guest API call also failed for logged-in user:', {
+                                                    status: innerStatus,
+                                                    error: innerError,
+                                                    responseText: innerXhr.responseText,
+                                                    statusCode: innerXhr.status
+                                                });
+                                                reject(new Error(`${innerError}: ${innerXhr.responseText}`));
+                                            }
+                                        });
+                                    } else {
+                                        reject(new Error(`${error}: ${xhr.responseText}`));
+                                    }
+                                }
+                            });
+                        } else {
+                            // For guest users, try with CSRF token first, then fallback to no CSRF
+                        $.ajax({
+                            url: '/api/method/' + options.method,
+                            type: 'POST',
+                            data: JSON.stringify(options.args || {}),
+                            contentType: 'application/json',
+                            headers: {
+                                'X-Frappe-CSRF-Token': token,
+                                'Accept': 'application/json'
+                            },
+                            success: function(response) {
+                                console.log('API response:', response);
+                                if (options.callback) {
+                                    options.callback(response);
+                                }
+                                resolve(response);
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('API call failed:', {
+                                    status: status,
+                                    error: error,
+                                    responseText: xhr.responseText,
+                                    statusCode: xhr.status
+                                });
+                                
+                                    // If we get a CSRF error, try to proceed with guest access
+                                if (xhr.responseText && xhr.responseText.includes('CSRFTokenError')) {
+                                    console.log('CSRF token error detected. Attempting guest access...');
+                                    // For guest access, try with a special header
                                     $.ajax({
                                         url: '/api/method/' + options.method + '?_noCSRF=1',
                                         type: 'POST',
@@ -365,14 +448,14 @@
                                             'Accept': 'application/json'
                                         },
                                         success: function(response) {
-                                            console.log('Guest no CSRF API response:', response);
+                                            console.log('Guest API response:', response);
                                             if (options.callback) {
                                                 options.callback(response);
                                             }
                                             resolve(response);
                                         },
                                         error: function(innerXhr, innerStatus, innerError) {
-                                            console.error('Guest API call failed:', {
+                                            console.error('Guest API call also failed:', {
                                                 status: innerStatus,
                                                 error: innerError,
                                                 responseText: innerXhr.responseText,
@@ -381,10 +464,13 @@
                                             reject(new Error(`${innerError}: ${innerXhr.responseText}`));
                                         }
                                     });
+                                } else {
+                                    reject(new Error(`${error}: ${xhr.responseText}`));
                                 }
-                            });
+                            }
                         });
-                    }
+                        }
+                    });
                 });
             }
         };
@@ -1139,47 +1225,90 @@
                         const testBackendConnection = async () => {
                             try {
                                 console.log('Testing backend connection...');
-                                console.log('Calling method: services_ordering.api.sales_order_form.test_connection');
+                                console.log('Calling method: services_ordering.www.sales_order_form.test_connection');
                                 
-                                // Try with API path
-                                let testResponse;
+                                // First attempt
                                 try {
-                                    testResponse = await frappe.call({
-                                        method: "services_ordering.api.sales_order_form.test_connection",
-                                        type: "GET"
+                                    // Try with www path first
+                                    let testResponse;
+                                    try {
+                                        testResponse = await frappe.call({
+                                            method: "services_ordering.www.sales_order_form.test_connection"
+                                        });
+                                    } catch (pathError) {
+                                        // If that fails, try with the old path
+                                        console.log('Trying alternative path after error:', pathError);
+                                        testResponse = await frappe.call({
+                                            method: "services_ordering.sales_order_form.test_connection"
+                                        });
+                                    }
+                                    
+                                    console.log('Backend test response:', testResponse);
+                                    console.log('Response structure:', {
+                                        hasMessage: !!testResponse.message,
+                                        messageType: typeof testResponse.message,
+                                        messageContent: testResponse.message
                                     });
-                                } catch (pathError) {
-                                    // If that fails, try with the www path as fallback
-                                    console.log('API path failed, trying www path as fallback:', pathError);
-                                    testResponse = await frappe.call({
-                                        method: "services_ordering.www.sales_order_form.test_connection"
-                                    });
-                                }
-                                
-                                console.log('Backend test response:', testResponse);
-                                console.log('Response structure:', {
-                                    hasMessage: !!testResponse.message,
-                                    messageType: typeof testResponse.message,
-                                    messageContent: testResponse.message
-                                });
-                                
-                                // Check different possible response structures
-                                if (testResponse && testResponse.message) {
-                                    if (typeof testResponse.message === 'object' && testResponse.message.success) {
-                                        return true;
-                                    } else if (typeof testResponse.message === 'string') {
-                                        // Sometimes Frappe returns the result as a JSON string
-                                        try {
-                                            const parsed = JSON.parse(testResponse.message);
-                                            return parsed && parsed.success;
-                                        } catch (e) {
-                                            console.log('Message is not JSON:', testResponse.message);
-                                            return false;
+                                    
+                                    // Check different possible response structures
+                                    if (testResponse && testResponse.message) {
+                                        if (typeof testResponse.message === 'object' && testResponse.message.success) {
+                                            return true;
+                                        } else if (typeof testResponse.message === 'string') {
+                                            // Sometimes Frappe returns the result as a JSON string
+                                            try {
+                                                const parsed = JSON.parse(testResponse.message);
+                                                return parsed && parsed.success;
+                                            } catch (e) {
+                                                console.log('Message is not JSON:', testResponse.message);
+                                                return false;
+                                            }
                                         }
                                     }
+                                    
+                                    return false;
+                                } catch (initialError) {
+                                    console.warn('Initial backend connection test failed, trying alternate approach:', initialError);
+                                    
+                                    // If we got a CSRF error, try direct fetch with ?_noCSRF=1 parameter
+                                    if (initialError.message && initialError.message.includes('CSRFTokenError')) {
+                                        console.log('Attempting alternative connection method for guest access...');
+                                        
+                                        // Direct fetch approach - try both possible paths
+                                        let response;
+                                        try {
+                                            // Try with www path first
+                                            response = await fetch('/api/method/services_ordering.www.sales_order_form.test_connection?_noCSRF=1', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Accept': 'application/json'
+                                                }
+                                            });
+                                        } catch (pathError) {
+                                            console.log('First path failed, trying alternative path:', pathError);
+                                            // If that fails, try with the old path
+                                            response = await fetch('/api/method/services_ordering.sales_order_form.test_connection?_noCSRF=1', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Accept': 'application/json'
+                                                }
+                                            });
+                                        }
+                                        
+                                        if (response.ok) {
+                                            const data = await response.json();
+                                            console.log('Alternative connection successful:', data);
+                                            return data && data.message && data.message.success;
+                                        } else {
+                                            console.error('Alternative connection also failed:', response.status, response.statusText);
+                                            return false;
+                                        }
+                                    } else {
+                                        throw initialError; // Re-throw if not CSRF related
+                                    }
                                 }
-                                
-                                return false;
                             } catch (error) {
                                 console.error('Backend connection test failed:', error);
                                 console.error('Error details:', {
@@ -1204,21 +1333,21 @@
                                     throw new Error('Backend connection test failed');
                                 }
                                 
-                                // Try API path first, then fall back to www path
+                                // Try both possible API paths
                                 let response;
                                 try {
-                                    response = await frappe.call({
-                                        method: "services_ordering.api.sales_order_form.get_master_data",
-                                        callback: function(r) {
-                                            console.log('Frappe call response (API path):', r);
-                                        }
-                                    });
-                                } catch (pathError) {
-                                    console.log('API path failed, trying www path as fallback:', pathError);
                                     response = await frappe.call({
                                         method: "services_ordering.www.sales_order_form.get_master_data",
                                         callback: function(r) {
                                             console.log('Frappe call response (www path):', r);
+                                        }
+                                    });
+                                } catch (pathError) {
+                                    console.log('First path failed, trying alternative path:', pathError);
+                                    response = await frappe.call({
+                                        method: "services_ordering.sales_order_form.get_master_data",
+                                        callback: function(r) {
+                                            console.log('Frappe call response (alternate path):', r);
                                         }
                                     });
                                 }
@@ -2960,5 +3089,7 @@
             `;
         }
     </script>
+    -->
+    <!-- ORIGINAL CONTENT - END COMMENT -->
 </body>
 </html>

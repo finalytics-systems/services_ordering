@@ -4,12 +4,12 @@ from frappe.utils import nowdate, flt, cint
 import json
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def test_connection():
     """Simple test function to verify backend connectivity"""
     return {"success": True, "message": "Backend connection successful!", "timestamp": frappe.utils.now()}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customers():
     """Get list of customers for the dropdown"""
     try:
@@ -28,7 +28,7 @@ def get_customers():
         frappe.log_error(f"Error fetching customers: {str(e)}", "Sales Order Form - Get Customers")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_companies():
     """Get list of companies for the dropdown"""
     try:
@@ -42,7 +42,7 @@ def get_companies():
         frappe.log_error(f"Error fetching companies: {str(e)}", "Sales Order Form - Get Companies")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_items():
     """Get list of sales items for the dropdown"""
     try:
@@ -81,7 +81,7 @@ def get_items():
         frappe.log_error(f"Error fetching items: {str(e)}", "Sales Order Form - Get Items")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_warehouses():
     """Get list of warehouses for the dropdown"""
     try:
@@ -96,7 +96,7 @@ def get_warehouses():
         frappe.log_error(f"Error fetching warehouses: {str(e)}", "Sales Order Form - Get Warehouses")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_territories():
     """Get list of territories for the dropdown"""
     try:
@@ -111,7 +111,7 @@ def get_territories():
         frappe.log_error(f"Error fetching territories: {str(e)}", "Sales Order Form - Get Territories")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customer_groups():
     """Get list of customer groups for the dropdown"""
     try:
@@ -126,7 +126,7 @@ def get_customer_groups():
         frappe.log_error(f"Error fetching customer groups: {str(e)}", "Sales Order Form - Get Customer Groups")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_price_lists():
     """Get list of selling price lists"""
     try:
@@ -141,7 +141,7 @@ def get_price_lists():
         frappe.log_error(f"Error fetching price lists: {str(e)}", "Sales Order Form - Get Price Lists")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_cities():
     """Get list of cities for the dropdown"""
     try:
@@ -156,7 +156,7 @@ def get_cities():
         frappe.log_error(f"Error fetching cities: {str(e)}", "Sales Order Form - Get Cities")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_neighborhoods(city=None):
     """Get list of neighborhoods for the dropdown, optionally filtered by city"""
     try:
@@ -181,7 +181,7 @@ def get_neighborhoods(city=None):
         frappe.log_error(f"Error fetching neighborhoods: {str(e)}", "Sales Order Form - Get Neighborhoods")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customer_details(customer):
     """Get detailed customer information"""
     try:
@@ -255,7 +255,7 @@ def get_customer_details(customer):
         frappe.log_error(f"Error fetching customer details: {str(e)}", "Sales Order Form - Get Customer Details")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_item_details(item_code, customer=None, company=None, price_list=None):
     """Get detailed item information including price"""
     try:
@@ -306,7 +306,7 @@ def get_item_details(item_code, customer=None, company=None, price_list=None):
         frappe.log_error(f"Error fetching item details: {str(e)}", "Sales Order Form - Get Item Details")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_sales_order(sales_order_data):
     """Create a new sales order in ERPNext"""
     try:
@@ -482,7 +482,7 @@ def create_sales_order(sales_order_data):
         frappe.log_error(f"Error creating sales order: {str(e)}", "Sales Order Form - Create Sales Order")
         return {"success": False, "message": f"Error creating sales order: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_master_data():
     """Get all master data in one API call for better performance"""
     try:
@@ -517,7 +517,7 @@ def get_master_data():
         frappe.log_error(f"Error fetching master data: {str(e)}", "Sales Order Form - Get Master Data")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def validate_sales_order_data(sales_order_data):
     """Validate sales order data before creation"""
     try:
@@ -565,7 +565,7 @@ def validate_sales_order_data(sales_order_data):
         frappe.log_error(f"Error validating sales order data: {str(e)}", "Sales Order Form - Validate Data")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customer_email(customer_name):
     """Get customer email from multiple sources"""
     try:
@@ -633,7 +633,7 @@ def get_customer_email(customer_name):
         frappe.log_error(f"Error getting customer email: {str(e)}", "Sales Order Form - Get Customer Email")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def send_sales_order_email(sales_order_name, customer_name=None, customer_email=None):
     """Send Sales Order PDF via email"""
     try:
@@ -689,10 +689,6 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         
         # Simple email sending with proper permissions
         try:
-            # Temporarily switch to Administrator to send email
-            original_user = frappe.session.user
-            frappe.set_user("Administrator")
-            
             # Generate PDF
             pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
             
@@ -709,12 +705,7 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
                 }]
             )
             
-            # Switch back to original user
-            frappe.set_user(original_user)
-            
         except Exception as email_error:
-            # Ensure we switch back to original user even if there's an error
-            frappe.set_user(original_user if 'original_user' in locals() else "Guest")
             raise Exception(f"Email sending failed: {str(email_error)}")
         
         return {
@@ -726,7 +717,7 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         frappe.log_error(f"Error sending sales order email: {str(e)}", "Sales Order Form - Send Email")
         return {"success": False, "message": f"Error sending email: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def test_email_retrieval(customer_name):
     """Simple test to check if we can find customer email"""
     try:
@@ -741,7 +732,7 @@ def test_email_retrieval(customer_name):
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def debug_customer_email(customer_name):
     """Debug method to check customer email retrieval"""
     try:
@@ -814,7 +805,7 @@ def debug_customer_email(customer_name):
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_customer(customer_data):
     """Create a new customer in ERPNext"""
     try:
@@ -937,7 +928,7 @@ def create_customer(customer_data):
         frappe.log_error(f"Error creating customer: {str(e)}", "Sales Order Form - Create Customer")
         return {"success": False, "message": f"Error creating customer: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_cleaning_teams():
     """Get list of cleaning teams for the dropdown - temporarily disabled"""
     """
@@ -954,7 +945,7 @@ def get_cleaning_teams():
     """
     return {"success": True, "data": []}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_payment_modes():
     """Get list of payment modes for the dropdown"""
     try:
@@ -968,7 +959,7 @@ def get_payment_modes():
         frappe.log_error(f"Error fetching payment modes: {str(e)}", "Sales Order Form - Get Payment Modes")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_payment_entry(sales_order_name, mode_of_payment, payment_slip_file=None, payment_slip_filename=None):
     """Create a payment entry for a sales order"""
     try:
@@ -985,103 +976,90 @@ def create_payment_entry(sales_order_name, mode_of_payment, payment_slip_file=No
         # Get Sales Order document
         sales_order = frappe.get_doc("Sales Order", sales_order_name)
         
-        # Temporarily switch to Administrator to create Payment Entry
-        original_user = frappe.session.user
-        frappe.set_user("Administrator")
+        # Create new Payment Entry document
+        payment_entry = frappe.new_doc("Payment Entry")
         
-        try:
-            # Create new Payment Entry document
-            payment_entry = frappe.new_doc("Payment Entry")
-            
-            # Set basic fields
-            payment_entry.payment_type = "Receive"
-            payment_entry.party_type = "Customer"
-            payment_entry.party = sales_order.customer
-            payment_entry.party_name = sales_order.customer_name
-            payment_entry.company = sales_order.company
-            payment_entry.posting_date = nowdate()
-            payment_entry.mode_of_payment = mode_of_payment
-            
-            # Get default cash account from company
-            default_cash_account = frappe.get_value("Company", sales_order.company, "default_cash_account")
-            if default_cash_account:
-                payment_entry.paid_to = default_cash_account
-            else:
-                # Fallback to any cash account for the company
-                cash_accounts = frappe.get_all("Account", 
-                    filters={"company": sales_order.company, "account_type": "Cash", "is_group": 0},
-                    fields=["name"], limit=1)
-                if cash_accounts:
-                    payment_entry.paid_to = cash_accounts[0].name
-            
-            # Set paid amount
-            payment_entry.paid_amount = sales_order.grand_total
-            payment_entry.received_amount = sales_order.grand_total
-            payment_entry.target_exchange_rate = 1
-            payment_entry.source_exchange_rate = 1
-            
-            # Add reference to Sales Order
-            payment_entry.append("references", {
-                "reference_doctype": "Sales Order",
-                "reference_name": sales_order_name,
-                "total_amount": sales_order.grand_total,
-                "outstanding_amount": sales_order.grand_total,
-                "allocated_amount": sales_order.grand_total
-            })
-            
-            # Handle file attachment if provided
-            if payment_slip_file and payment_slip_filename:
-                try:
-                    # Save file to Frappe's file system
-                    import base64
-                    file_doc = frappe.get_doc({
-                        "doctype": "File",
-                        "file_name": payment_slip_filename,
-                        "content": base64.b64decode(payment_slip_file.split(',')[1] if ',' in payment_slip_file else payment_slip_file),
-                        "is_private": 1,
-                        "folder": "Home/Attachments"
-                    })
-                    file_doc.insert(ignore_permissions=True)
-                    
-                    # Set custom field with file URL if it exists
-                    if hasattr(payment_entry, 'custom_payment_slip'):
-                        payment_entry.custom_payment_slip = file_doc.file_url
-                    
-                except Exception as file_error:
-                    frappe.log_error(f"Error uploading payment slip: {str(file_error)}", "Payment Entry - File Upload")
-                    # Continue without failing the entire payment creation
-            
-            # Insert the document
-            payment_entry.insert(ignore_permissions=True)
-            
-            # Submit the payment entry
-            payment_entry.submit()
-            
-            return {
-                "success": True,
-                "message": f"Payment Entry {payment_entry.name} created successfully!",
-                "payment_entry_name": payment_entry.name,
-                "data": {
-                    "name": payment_entry.name,
-                    "paid_amount": payment_entry.paid_amount,
-                    "mode_of_payment": payment_entry.mode_of_payment,
-                    "posting_date": payment_entry.posting_date
-                }
+        # Set basic fields
+        payment_entry.payment_type = "Receive"
+        payment_entry.party_type = "Customer"
+        payment_entry.party = sales_order.customer
+        payment_entry.party_name = sales_order.customer_name
+        payment_entry.company = sales_order.company
+        payment_entry.posting_date = nowdate()
+        payment_entry.mode_of_payment = mode_of_payment
+        
+        # Get default cash account from company
+        default_cash_account = frappe.get_value("Company", sales_order.company, "default_cash_account")
+        if default_cash_account:
+            payment_entry.paid_to = default_cash_account
+        else:
+            # Fallback to any cash account for the company
+            cash_accounts = frappe.get_all("Account", 
+                filters={"company": sales_order.company, "account_type": "Cash", "is_group": 0},
+                fields=["name"], limit=1)
+            if cash_accounts:
+                payment_entry.paid_to = cash_accounts[0].name
+        
+        # Set paid amount
+        payment_entry.paid_amount = sales_order.grand_total
+        payment_entry.received_amount = sales_order.grand_total
+        payment_entry.target_exchange_rate = 1
+        payment_entry.source_exchange_rate = 1
+        
+        # Add reference to Sales Order
+        payment_entry.append("references", {
+            "reference_doctype": "Sales Order",
+            "reference_name": sales_order_name,
+            "total_amount": sales_order.grand_total,
+            "outstanding_amount": sales_order.grand_total,
+            "allocated_amount": sales_order.grand_total
+        })
+        
+        # Handle file attachment if provided
+        if payment_slip_file and payment_slip_filename:
+            try:
+                # Save file to Frappe's file system
+                import base64
+                file_doc = frappe.get_doc({
+                    "doctype": "File",
+                    "file_name": payment_slip_filename,
+                    "content": base64.b64decode(payment_slip_file.split(',')[1] if ',' in payment_slip_file else payment_slip_file),
+                    "is_private": 1,
+                    "folder": "Home/Attachments"
+                })
+                file_doc.insert(ignore_permissions=True)
+                
+                # Set custom field with file URL if it exists
+                if hasattr(payment_entry, 'custom_payment_slip'):
+                    payment_entry.custom_payment_slip = file_doc.file_url
+                
+            except Exception as file_error:
+                frappe.log_error(f"Error uploading payment slip: {str(file_error)}", "Payment Entry - File Upload")
+                # Continue without failing the entire payment creation
+        
+        # Insert the document
+        payment_entry.insert(ignore_permissions=True)
+        
+        # Submit the payment entry
+        payment_entry.submit()
+        
+        return {
+            "success": True,
+            "message": f"Payment Entry {payment_entry.name} created successfully!",
+            "payment_entry_name": payment_entry.name,
+            "data": {
+                "name": payment_entry.name,
+                "paid_amount": payment_entry.paid_amount,
+                "mode_of_payment": payment_entry.mode_of_payment,
+                "posting_date": payment_entry.posting_date
             }
-            
-        finally:
-            # Always switch back to original user
-            frappe.set_user(original_user)
+        }
         
     except Exception as e:
-        # Ensure we switch back to original user even if there's an error
-        if 'original_user' in locals():
-            frappe.set_user(original_user)
-        
         frappe.log_error(f"Error creating payment entry: {str(e)}", "Sales Order Form - Create Payment Entry")
         return {"success": False, "message": f"Error creating payment entry: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def download_sales_order_pdf(sales_order_name):
     """Generate and return Sales Order PDF in SS Order format"""
     try:
@@ -1092,35 +1070,22 @@ def download_sales_order_pdf(sales_order_name):
         if not frappe.db.exists("Sales Order", sales_order_name):
             return {"success": False, "message": "Sales Order not found"}
         
-        # Temporarily switch to Administrator to generate PDF
-        original_user = frappe.session.user
-        frappe.set_user("Administrator")
+        # Generate PDF
+        import base64
+        pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+        pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
         
-        try:
-            # Generate PDF
-            import base64
-            pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
-            pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
-            
-            return {
-                "success": True,
-                "pdf_content": pdf_base64,
-                "filename": f"{sales_order_name}.pdf"
-            }
-            
-        finally:
-            # Always switch back to original user
-            frappe.set_user(original_user)
+        return {
+            "success": True,
+            "pdf_content": pdf_base64,
+            "filename": f"{sales_order_name}.pdf"
+        }
         
     except Exception as e:
-        # Ensure we switch back to original user even if there's an error
-        if 'original_user' in locals():
-            frappe.set_user(original_user)
-        
         frappe.log_error(f"Error generating sales order PDF: {str(e)}", "Sales Order Form - Download PDF")
         return {"success": False, "message": f"Error generating PDF: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_cleaning_teams_list():
     """Get list of all cleaning teams for availability viewer"""
     try:
@@ -1134,7 +1099,7 @@ def get_cleaning_teams_list():
         frappe.log_error(f"Error fetching cleaning teams list: {str(e)}", "Sales Order Form - Get Teams")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_team_availability(team_name, date=None):
     """Get team availability for a specific date"""
     try:
