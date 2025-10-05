@@ -4,7 +4,7 @@ from frappe.utils import nowdate, flt, cint
 import json
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
 def test_connection():
     """Simple test function to verify backend connectivity"""
     return {"success": True, "message": "Backend connection successful!", "timestamp": frappe.utils.now()}
