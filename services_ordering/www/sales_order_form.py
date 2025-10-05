@@ -1092,18 +1092,31 @@ def download_sales_order_pdf(sales_order_name):
         if not frappe.db.exists("Sales Order", sales_order_name):
             return {"success": False, "message": "Sales Order not found"}
         
-        # Generate PDF
-        import base64
-        pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
-        pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+        # Temporarily switch to Administrator to generate PDF
+        original_user = frappe.session.user
+        frappe.set_user("Administrator")
         
-        return {
-            "success": True,
-            "pdf_content": pdf_base64,
-            "filename": f"{sales_order_name}.pdf"
-        }
+        try:
+            # Generate PDF
+            import base64
+            pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+            pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+            
+            return {
+                "success": True,
+                "pdf_content": pdf_base64,
+                "filename": f"{sales_order_name}.pdf"
+            }
+            
+        finally:
+            # Always switch back to original user
+            frappe.set_user(original_user)
         
     except Exception as e:
+        # Ensure we switch back to original user even if there's an error
+        if 'original_user' in locals():
+            frappe.set_user(original_user)
+        
         frappe.log_error(f"Error generating sales order PDF: {str(e)}", "Sales Order Form - Download PDF")
         return {"success": False, "message": f"Error generating PDF: {str(e)}"}
 
