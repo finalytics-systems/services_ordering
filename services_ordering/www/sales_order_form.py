@@ -985,77 +985,99 @@ def create_payment_entry(sales_order_name, mode_of_payment, payment_slip_file=No
         # Get Sales Order document
         sales_order = frappe.get_doc("Sales Order", sales_order_name)
         
-        # Create new Payment Entry document
-        payment_entry = frappe.new_doc("Payment Entry")
+        # Temporarily switch to Administrator to create Payment Entry
+        original_user = frappe.session.user
+        frappe.set_user("Administrator")
         
-        # Set basic fields
-        payment_entry.payment_type = "Receive"
-        payment_entry.party_type = "Customer"
-        payment_entry.party = sales_order.customer
-        payment_entry.party_name = sales_order.customer_name
-        payment_entry.company = sales_order.company
-        payment_entry.posting_date = nowdate()
-        payment_entry.mode_of_payment = mode_of_payment
-        
-        # If no default account found, get from company
-        if not payment_entry.paid_to:
-            payment_entry.paid_to = frappe.get_value("Company", sales_order.company, "default_cash_account")
-        
-        # Set paid amount
-        payment_entry.paid_amount = sales_order.grand_total
-        payment_entry.received_amount = sales_order.grand_total
-        payment_entry.target_exchange_rate = 1
-        payment_entry.source_exchange_rate = 1
-        
-        # Add reference to Sales Order
-        payment_entry.append("references", {
-            "reference_doctype": "Sales Order",
-            "reference_name": sales_order_name,
-            "total_amount": sales_order.grand_total,
-            "outstanding_amount": sales_order.grand_total,
-            "allocated_amount": sales_order.grand_total
-        })
-        
-        # Handle file attachment if provided
-        if payment_slip_file and payment_slip_filename:
-            try:
-                # Save file to Frappe's file system
-                import base64
-                file_doc = frappe.get_doc({
-                    "doctype": "File",
-                    "file_name": payment_slip_filename,
-                    "content": base64.b64decode(payment_slip_file.split(',')[1] if ',' in payment_slip_file else payment_slip_file),
-                    "is_private": 1,
-                    "folder": "Home/Attachments"
-                })
-                file_doc.insert(ignore_permissions=True)
-                
-                # Set custom field with file URL
-                payment_entry.custom_payment_slip = file_doc.file_url
-                
-            except Exception as file_error:
-                frappe.log_error(f"Error uploading payment slip: {str(file_error)}", "Payment Entry - File Upload")
-                # Continue without failing the entire payment creation
-        
-        # Insert the document
-        payment_entry.insert(ignore_permissions=True)
-        
-        # Submit the payment entry
-        payment_entry.submit()
-        
-        return {
-            "success": True,
-            "message": f"Payment Entry {payment_entry.name} created successfully!",
-            "payment_entry_name": payment_entry.name,
-            "data": {
-                "name": payment_entry.name,
-                "paid_amount": payment_entry.paid_amount,
-                "mode_of_payment": payment_entry.mode_of_payment,
-                "posting_date": payment_entry.posting_date
+        try:
+            # Create new Payment Entry document
+            payment_entry = frappe.new_doc("Payment Entry")
+            
+            # Set basic fields
+            payment_entry.payment_type = "Receive"
+            payment_entry.party_type = "Customer"
+            payment_entry.party = sales_order.customer
+            payment_entry.party_name = sales_order.customer_name
+            payment_entry.company = sales_order.company
+            payment_entry.posting_date = nowdate()
+            payment_entry.mode_of_payment = mode_of_payment
+            
+            # Get default cash account from company
+            default_cash_account = frappe.get_value("Company", sales_order.company, "default_cash_account")
+            if default_cash_account:
+                payment_entry.paid_to = default_cash_account
+            else:
+                # Fallback to any cash account for the company
+                cash_accounts = frappe.get_all("Account", 
+                    filters={"company": sales_order.company, "account_type": "Cash", "is_group": 0},
+                    fields=["name"], limit=1)
+                if cash_accounts:
+                    payment_entry.paid_to = cash_accounts[0].name
+            
+            # Set paid amount
+            payment_entry.paid_amount = sales_order.grand_total
+            payment_entry.received_amount = sales_order.grand_total
+            payment_entry.target_exchange_rate = 1
+            payment_entry.source_exchange_rate = 1
+            
+            # Add reference to Sales Order
+            payment_entry.append("references", {
+                "reference_doctype": "Sales Order",
+                "reference_name": sales_order_name,
+                "total_amount": sales_order.grand_total,
+                "outstanding_amount": sales_order.grand_total,
+                "allocated_amount": sales_order.grand_total
+            })
+            
+            # Handle file attachment if provided
+            if payment_slip_file and payment_slip_filename:
+                try:
+                    # Save file to Frappe's file system
+                    import base64
+                    file_doc = frappe.get_doc({
+                        "doctype": "File",
+                        "file_name": payment_slip_filename,
+                        "content": base64.b64decode(payment_slip_file.split(',')[1] if ',' in payment_slip_file else payment_slip_file),
+                        "is_private": 1,
+                        "folder": "Home/Attachments"
+                    })
+                    file_doc.insert(ignore_permissions=True)
+                    
+                    # Set custom field with file URL if it exists
+                    if hasattr(payment_entry, 'custom_payment_slip'):
+                        payment_entry.custom_payment_slip = file_doc.file_url
+                    
+                except Exception as file_error:
+                    frappe.log_error(f"Error uploading payment slip: {str(file_error)}", "Payment Entry - File Upload")
+                    # Continue without failing the entire payment creation
+            
+            # Insert the document
+            payment_entry.insert(ignore_permissions=True)
+            
+            # Submit the payment entry
+            payment_entry.submit()
+            
+            return {
+                "success": True,
+                "message": f"Payment Entry {payment_entry.name} created successfully!",
+                "payment_entry_name": payment_entry.name,
+                "data": {
+                    "name": payment_entry.name,
+                    "paid_amount": payment_entry.paid_amount,
+                    "mode_of_payment": payment_entry.mode_of_payment,
+                    "posting_date": payment_entry.posting_date
+                }
             }
-        }
+            
+        finally:
+            # Always switch back to original user
+            frappe.set_user(original_user)
         
     except Exception as e:
+        # Ensure we switch back to original user even if there's an error
+        if 'original_user' in locals():
+            frappe.set_user(original_user)
+        
         frappe.log_error(f"Error creating payment entry: {str(e)}", "Sales Order Form - Create Payment Entry")
         return {"success": False, "message": f"Error creating payment entry: {str(e)}"}
 
