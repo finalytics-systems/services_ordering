@@ -56,10 +56,16 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 				min-height: 100vh !important;
 			}
 			
+			/* Ensure full width for main container */
+			.max-w-full {
+				max-width: 100% !important;
+				width: 100% !important;
+			}
+			
 			/* Mobile Responsive Styles */
 			@media (max-width: 768px) {
 				/* Make padding smaller on mobile */
-				.max-w-7xl {
+				.max-w-full {
 					padding-left: 1rem !important;
 					padding-right: 1rem !important;
 				}
@@ -264,9 +270,8 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 
 					// Add new item to the items list
 					const addItem = () => {
-						console.log('addItem called, current items length:', items.value.length);
 						const newIndex = items.value.length;
-						const newItem = {
+						items.value.push({
 							item_code: '',
 							item_name: '',
 							description: '',
@@ -275,11 +280,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							rate: 0,
 							amount: 0,
 							net_amount: 0
-						};
-						items.value.push(newItem);
-						console.log('Added new item, items length now:', items.value.length);
-						console.log('Items array:', items.value);
-						
+						});
 						// Initialize dropdown states for new item
 						showItemDropdown.value[newIndex] = false;
 						itemSearchTerm.value[newIndex] = '';
@@ -1231,10 +1232,8 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 
 					onMounted(() => {
 						console.log('Vue onMounted called');
-						console.log('Initial items array:', items.value);
 						fetchMasterData();
 						addItem(); // Add first item by default
-						console.log('After addItem, items array:', items.value);
 						
 						// Add beforeunload event to show confirmation before page refresh
 						window.addEventListener('beforeunload', (event) => {
@@ -1354,8 +1353,8 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 template: `
 <div class="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6">
 <!-- Success/Error Message Popup -->
-<div v-if="showSuccessMessage" class="fixed top-4 right-4 left-4 sm:left-auto z-50 max-w-md mx-auto sm:mx-0">
-<div :class="isErrorMessage ? 'bg-white border-l-4 border-red-500 rounded-lg shadow-lg p-4 flex items-center' : 'bg-white border-l-4 border-green-500 rounded-lg shadow-lg p-4 flex items-center'">
+<div v-if="showSuccessMessage" class="fixed top-20 right-4 left-4 sm:left-auto z-[9999] max-w-md mx-auto sm:mx-0" style="max-width: 90vw; word-wrap: break-word;">
+<div :class="isErrorMessage ? 'bg-white border-l-4 border-red-500 rounded-lg shadow-lg p-4 flex items-center' : 'bg-white border-l-4 border-green-500 rounded-lg shadow-lg p-4 flex items-center'" style="min-width: 280px;">
 <div class="flex-shrink-0">
 <!-- Success Icon -->
 <svg v-if="!isErrorMessage" class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1367,7 +1366,7 @@ template: `
 </svg>
 </div>
 <div class="ml-3 flex-1">
-<p class="text-sm font-medium text-gray-900">{{ successMessage }}</p>
+<p class="text-sm font-medium text-gray-900 break-words">{{ successMessage }}</p>
 </div>
 <div class="ml-4 flex-shrink-0">
 <button @click="showSuccessMessage = false" class="text-gray-400 hover:text-gray-600">
@@ -1380,7 +1379,7 @@ template: `
 </div>
 
 <!-- Header Section -->
-<div class="max-w-7xl mx-auto px-2 sm:px-4">
+							<div class="max-w-full mx-auto px-2 sm:px-4">
 <!-- Back Button -->
 <div class="mb-4 sm:mb-6">
 <button 
@@ -1633,160 +1632,9 @@ Add Service
 </button>
 </div>
 
-<!-- Services Table - Desktop View -->
-<div class="hidden md:block overflow-visible">
-<table class="w-full table-fixed">
-<thead>
-<tr class="bg-gray-50 border-b border-gray-200">
-<th class="w-96 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Service</th>
-<th class="w-28 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Qty</th>
-<th class="w-40 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Rate</th>
-<th class="w-40 px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
-<th class="w-20 px-4 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Action</th>
-</tr>
-</thead>
-<tbody class="bg-white divide-y divide-gray-200">
-<!-- Debug info -->
-<tr>
-<td colspan="5" class="text-center py-2 bg-yellow-100 text-xs">
-DEBUG: Items count = {{ items.length }} | Items: {{ JSON.stringify(items) }}
-</td>
-</tr>
-<tr v-if="items.length === 0" class="text-center py-8">
-<td colspan="5" class="text-gray-500 py-8">
-<div class="text-center">
-<p class="text-lg font-medium">No services added yet</p>
-<p class="text-sm">Click "Add Service" to get started</p>
-</div>
-</td>
-</tr>
-<!-- Test row to verify table rendering -->
-<tr class="bg-blue-100">
-<td colspan="5" class="text-center py-4 font-bold text-blue-800">
-TEST ROW: Table is rendering! Items count: {{ items.length }}
-</td>
-</tr>
-<tr v-for="(item, index) in items" :key="index" class="hover:bg-gray-50 transition-colors duration-200">
-<td class="px-4 py-4 w-96">
-<div class="relative">
-<!-- Enhanced Item Dropdown -->
-<div 
-@click="toggleItemDropdown(index)"
-class="border-2 border-gray-200 rounded-lg p-2 bg-white cursor-pointer hover:border-blue-300 hover:shadow-md transition-all duration-200 flex justify-between items-center w-full"
->
-<div class="flex items-center flex-1 min-w-0">
-<div class="w-5 h-5 bg-green-100 rounded flex items-center justify-center mr-2 flex-shrink-0">
-<svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-</svg>
-</div>
-<span class="text-gray-700 font-medium text-xs truncate">
-{{ item.item_code ? (itemsList.find(i => i.name === item.item_code)?.item_name || item.item_code) : 'Select service...' }}
-</span>
-</div>
-<svg class="w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ml-1" :class="showItemDropdown[index] ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-</svg>
-</div>
 
-<!-- Enhanced Dropdown Options -->
-<div v-if="showItemDropdown[index]" class="absolute z-[9999] left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl w-96" style="min-width: 400px; position: fixed; top: auto; left: auto;">
-<div class="p-4">
-<!-- Enhanced Search Box -->
-<div class="relative mb-4">
-<svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-</svg>
-<input 
-v-model="itemSearchTerm[index]"
-type="text"
-placeholder="Search services..."
-class="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
->
-</div>
-
-<!-- Enhanced Options List -->
-<div class="space-y-2 max-h-60 overflow-y-auto">
-<div 
-v-for="itemOption in getFilteredItems(index)" 
-:key="itemOption.name"
-@click="selectItem(itemOption, index)"
-class="flex items-center p-3 hover:bg-green-50 rounded-lg cursor-pointer transition-colors duration-200 border border-transparent hover:border-green-200"
->
-<div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
-<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-</svg>
-</div>
-<div class="flex-1 min-w-0">
-<div class="font-semibold text-gray-900 text-sm truncate">{{ itemOption.item_name }}</div>
-<div class="text-xs text-gray-600 mt-1">
-<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2">
-🏷️ {{ itemOption.name }}
-</span>
-<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-💰 {{ (itemOption.standard_rate || 0).toLocaleString('en-US', { style: 'currency', currency: 'SAR' }) }}
-</span>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Enhanced No Results Message -->
-<div v-if="getFilteredItems(index).length === 0" class="text-center py-6 text-gray-500">
-<svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-</svg>
-<p class="text-sm font-medium">No services found</p>
-<p class="text-xs">Try adjusting your search terms</p>
-</div>
-</div>
-</div>
-</div>
-</td>
-<td class="px-4 py-4 w-28">
-<input 
-type="number"
-v-model="item.qty"
-@input="calculateItemAmount(item)"
-min="1"
-step="1"
-class="w-full px-2 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
->
-</td>
-<td class="px-4 py-4 w-40">
-<input 
-type="number"
-v-model="item.rate"
-@input="calculateItemAmount(item)"
-min="0"
-step="0.01"
-class="w-full px-2 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
->
-</td>
-<td class="px-4 py-4 w-40">
-<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 w-full justify-center">
-{{ (item.net_amount || 0).toLocaleString('en-US', { style: 'currency', currency: 'SAR' }) }}
-</span>
-</td>
-<td class="px-4 py-4 text-center w-20">
-<button 
-@click="removeItem(index)"
-class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200"
-title="Remove Service"
->
-<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-</svg>
-</button>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-
-<!-- Services List - Mobile View -->
-<div class="block md:hidden space-y-4">
+<!-- Services List - All Screens -->
+<div class="space-y-4">
 <div v-for="(item, index) in items" :key="index" class="bg-white rounded-lg p-4 border border-gray-200 relative shadow-sm">
 <!-- Remove Button - Top Right -->
 <button 
