@@ -395,6 +395,9 @@
                         const selectedDateForViewing = ref(new Date().toISOString().split('T')[0]);
                         const teamAvailabilityData = ref(null);
                         const availableTeamsList = ref([]);
+                        const showAllTeams = ref(false);
+                        const teamsToShowInitially = 2;
+                        const activeTeamTab = ref(0);
 
                         // Add new item to the items list
                         const addItem = () => {
@@ -880,6 +883,8 @@
                             showTeamAvailabilityPopup.value = false;
                             selectedTeamForViewing.value = '';
                             teamAvailabilityData.value = null;
+                            showAllTeams.value = false;
+                            activeTeamTab.value = 0;
                         };
                         
                         // Fetch availability for all teams
@@ -1563,6 +1568,9 @@
                             selectedDateForViewing,
                             teamAvailabilityData,
                             availableTeamsList,
+                            showAllTeams,
+                            teamsToShowInitially,
+                            activeTeamTab,
                             openTeamAvailabilityPopup,
                             closeTeamAvailabilityPopup,
                             fetchTeamAvailability,
@@ -2606,7 +2614,7 @@
                         
                         <!-- Team Availability Viewer Popup Modal -->
                         <div v-if="showTeamAvailabilityPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4" style="overflow-y: auto;">
-                            <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[95vh] overflow-y-auto my-4">
+                            <div class="bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[98vh] overflow-y-auto my-2">
                                 <div class="p-4 sm:p-6">
                                     <!-- Modal Header -->
                                     <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
@@ -2662,75 +2670,101 @@
                                         <p class="mt-4 text-gray-600">Loading team schedule...</p>
                                     </div>
                                     
-                                    <!-- All Teams Availability Display -->
+                                    <!-- All Teams Availability Display with Tabs -->
                                     <div v-else-if="teamAvailabilityData && teamAvailabilityData.length > 0 && !selectedTeamForViewing">
-                                        <div class="space-y-6">
-                                            <div v-for="teamData in teamAvailabilityData" :key="teamData.team_name" 
-                                                 class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                                                <!-- Team Header -->
-                                                <div class="bg-gray-50 border-b border-gray-200 p-4">
-                                                    <h3 class="font-semibold text-lg text-gray-800">\{\{ teamData.team_display_name \}\}</h3>
-                                                    <p class="text-sm text-gray-600">\{\{ new Date(selectedDateForViewing).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) \}\}</p>
-                                                </div>
-                                                
-                                                <!-- Time Slots Grid -->
-                                                <div class="p-4 max-h-80 overflow-y-auto">
-                                                    <!-- Error State -->
-                                                    <div v-if="teamData.error" class="text-center py-8 text-red-500">
-                                                        <svg class="w-16 h-16 text-red-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                        </svg>
-                                                        <p class="font-medium">Error loading team data</p>
-                                                        <p class="text-sm">Unable to fetch availability for this team</p>
-                                                    </div>
-                                                    
-                                                    <!-- No Shifts -->
-                                                    <div v-else-if="!teamData.shifts || teamData.shifts.length === 0" class="text-center py-8 text-gray-500">
-                                                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                        </svg>
-                                                        <p class="font-medium">No shifts configured</p>
-                                                        <p class="text-sm">This team has no working hours set up</p>
-                                                    </div>
-                                                    
-                                                    <!-- Time Slots -->
-                                                    <div v-else class="space-y-2">
-                                                        <div v-for="hour in getTimeSlots()" :key="hour" 
-                                                             v-show="isInWorkingShift(hour, teamData)"
-                                                             class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200"
+                                        <!-- Team Tabs -->
+                                        <div class="border-b border-gray-200 mb-6">
+                                            <nav class="-mb-px flex space-x-8 overflow-x-auto">
+                                                <button 
+                                                    v-for="(teamData, index) in teamAvailabilityData" 
+                                                    :key="teamData.team_name"
+                                                    @click="activeTeamTab = index"
+                                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
+                                                    :class="{
+                                                        'border-blue-500 text-blue-600': activeTeamTab === index,
+                                                        'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTeamTab !== index
+                                                    }"
+                                                >
+                                                    <div class="flex items-center">
+                                                        <div class="w-6 h-6 rounded-full mr-2 flex items-center justify-center text-xs font-bold"
                                                              :class="{
-                                                                 'bg-green-50 border-green-300': !isTimeSlotBooked(hour, teamData),
-                                                                 'bg-red-50 border-red-300': isTimeSlotBooked(hour, teamData)
+                                                                 'bg-blue-100 text-blue-600': activeTeamTab === index,
+                                                                 'bg-gray-100 text-gray-500': activeTeamTab !== index
                                                              }"
                                                         >
-                                                            <!-- Time Display -->
-                                                            <div class="w-20 font-mono font-semibold text-gray-700 text-sm">
-                                                                \{\{ formatHour(hour) \}\}
+                                                            \{\{ index + 1 \}\}
+                                                        </div>
+                                                        \{\{ teamData.team_display_name \}\}
+                                                    </div>
+                                                </button>
+                                            </nav>
+                                        </div>
+                                        
+                                        <!-- Active Team Content -->
+                                        <div v-if="teamAvailabilityData[activeTeamTab]" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                            <!-- Team Header -->
+                                            <div class="bg-gray-50 border-b border-gray-200 p-4">
+                                                <h3 class="font-semibold text-lg text-gray-800">\{\{ teamAvailabilityData[activeTeamTab].team_display_name \}\}</h3>
+                                                <p class="text-sm text-gray-600">\{\{ new Date(selectedDateForViewing).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) \}\}</p>
+                                            </div>
+                                            
+                                            <!-- Time Slots Grid -->
+                                            <div class="p-4 max-h-96 overflow-y-auto">
+                                                <!-- Error State -->
+                                                <div v-if="teamAvailabilityData[activeTeamTab].error" class="text-center py-8 text-red-500">
+                                                    <svg class="w-16 h-16 text-red-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <p class="font-medium">Error loading team data</p>
+                                                    <p class="text-sm">Unable to fetch availability for this team</p>
+                                                </div>
+                                                
+                                                <!-- No Shifts -->
+                                                <div v-else-if="!teamAvailabilityData[activeTeamTab].shifts || teamAvailabilityData[activeTeamTab].shifts.length === 0" class="text-center py-8 text-gray-500">
+                                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <p class="font-medium">No shifts configured</p>
+                                                    <p class="text-sm">This team has no working hours set up</p>
+                                                </div>
+                                                
+                                                <!-- Time Slots -->
+                                                <div v-else class="space-y-2">
+                                                    <div v-for="hour in getTimeSlots()" :key="hour" 
+                                                         v-show="isInWorkingShift(hour, teamAvailabilityData[activeTeamTab])"
+                                                         class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200"
+                                                         :class="{
+                                                             'bg-green-50 border-green-300': !isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]),
+                                                             'bg-red-50 border-red-300': isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab])
+                                                         }"
+                                                    >
+                                                        <!-- Time Display -->
+                                                        <div class="w-24 font-mono font-semibold text-gray-700">
+                                                            \{\{ formatHour(hour) \}\}
+                                                        </div>
+                                                        
+                                                        <!-- Status Indicator -->
+                                                        <div class="flex-1 flex items-center gap-3">
+                                                            <!-- Visual Bar -->
+                                                            <div class="flex-1 h-10 rounded-lg flex items-center px-4"
+                                                                 :class="{
+                                                                     'bg-green-500': !isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]),
+                                                                     'bg-red-500': isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab])
+                                                                 }"
+                                                            >
+                                                                <span class="text-white text-sm font-semibold">
+                                                                    \{\{ isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]) ? '🔴 BOOKED' : '✅ AVAILABLE' \}\}
+                                                                </span>
                                                             </div>
                                                             
-                                                            <!-- Status Indicator -->
-                                                            <div class="flex-1 flex items-center gap-3">
-                                                                <!-- Visual Bar -->
-                                                                <div class="flex-1 h-8 rounded-lg flex items-center px-3"
-                                                                     :class="{
-                                                                         'bg-green-500': !isTimeSlotBooked(hour, teamData),
-                                                                         'bg-red-500': isTimeSlotBooked(hour, teamData)
-                                                                     }"
-                                                                >
-                                                                    <span class="text-white text-xs font-semibold">
-                                                                        \{\{ isTimeSlotBooked(hour, teamData) ? '🔴 BOOKED' : '✅ AVAILABLE' \}\}
-                                                                    </span>
-                                                                </div>
-                                                                
-                                                                <!-- Status Badge -->
-                                                                <div class="text-xs font-bold px-3 py-1 rounded-lg"
-                                                                     :class="{
-                                                                         'bg-green-100 text-green-700': !isTimeSlotBooked(hour, teamData),
-                                                                         'bg-red-100 text-red-700': isTimeSlotBooked(hour, teamData)
-                                                                     }"
-                                                                >
-                                                                    \{\{ isTimeSlotBooked(hour, teamData) ? 'BUSY' : 'FREE' \}\}
-                                                                </div>
+                                                            <!-- Status Badge -->
+                                                            <div class="text-sm font-bold px-4 py-2 rounded-lg"
+                                                                 :class="{
+                                                                     'bg-green-100 text-green-700': !isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]),
+                                                                     'bg-red-100 text-red-700': isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab])
+                                                                 }"
+                                                            >
+                                                                \{\{ isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]) ? 'BUSY' : 'FREE' \}\}
                                                             </div>
                                                         </div>
                                                     </div>
