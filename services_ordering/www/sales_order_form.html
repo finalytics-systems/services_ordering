@@ -1139,19 +1139,20 @@
                         const testBackendConnection = async () => {
                             try {
                                 console.log('Testing backend connection...');
-                                console.log('Calling method: services_ordering.www.sales_order_form.test_connection');
+                                console.log('Calling method: services_ordering.api.sales_order_form.test_connection');
                                 
-                                // Try with www path first
+                                // Try with API path
                                 let testResponse;
                                 try {
                                     testResponse = await frappe.call({
-                                        method: "services_ordering.www.sales_order_form.test_connection"
+                                        method: "services_ordering.api.sales_order_form.test_connection",
+                                        type: "GET"
                                     });
                                 } catch (pathError) {
-                                    // If that fails, try with the old path
-                                    console.log('Trying alternative path after error:', pathError);
+                                    // If that fails, try with the www path as fallback
+                                    console.log('API path failed, trying www path as fallback:', pathError);
                                     testResponse = await frappe.call({
-                                        method: "services_ordering.sales_order_form.test_connection"
+                                        method: "services_ordering.www.sales_order_form.test_connection"
                                     });
                                 }
                                 
@@ -1203,21 +1204,21 @@
                                     throw new Error('Backend connection test failed');
                                 }
                                 
-                                // Try both possible API paths
+                                // Try API path first, then fall back to www path
                                 let response;
                                 try {
+                                    response = await frappe.call({
+                                        method: "services_ordering.api.sales_order_form.get_master_data",
+                                        callback: function(r) {
+                                            console.log('Frappe call response (API path):', r);
+                                        }
+                                    });
+                                } catch (pathError) {
+                                    console.log('API path failed, trying www path as fallback:', pathError);
                                     response = await frappe.call({
                                         method: "services_ordering.www.sales_order_form.get_master_data",
                                         callback: function(r) {
                                             console.log('Frappe call response (www path):', r);
-                                        }
-                                    });
-                                } catch (pathError) {
-                                    console.log('First path failed, trying alternative path:', pathError);
-                                    response = await frappe.call({
-                                        method: "services_ordering.sales_order_form.get_master_data",
-                                        callback: function(r) {
-                                            console.log('Frappe call response (alternate path):', r);
                                         }
                                     });
                                 }
