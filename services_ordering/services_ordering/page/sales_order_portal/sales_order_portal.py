@@ -4,12 +4,12 @@ from frappe.utils import nowdate, flt, cint
 import json
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def test_connection():
     """Simple test function to verify backend connectivity"""
     return {"success": True, "message": "Backend connection successful!", "timestamp": frappe.utils.now()}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customers():
     """Get list of customers for the dropdown"""
     try:
@@ -28,7 +28,7 @@ def get_customers():
         frappe.log_error(f"Error fetching customers: {str(e)}", "Sales Order Form - Get Customers")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_companies():
     """Get list of companies for the dropdown"""
     try:
@@ -42,7 +42,7 @@ def get_companies():
         frappe.log_error(f"Error fetching companies: {str(e)}", "Sales Order Form - Get Companies")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_items():
     """Get list of sales items for the dropdown"""
     try:
@@ -81,7 +81,7 @@ def get_items():
         frappe.log_error(f"Error fetching items: {str(e)}", "Sales Order Form - Get Items")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_warehouses():
     """Get list of warehouses for the dropdown"""
     try:
@@ -96,7 +96,7 @@ def get_warehouses():
         frappe.log_error(f"Error fetching warehouses: {str(e)}", "Sales Order Form - Get Warehouses")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_territories():
     """Get list of territories for the dropdown"""
     try:
@@ -111,7 +111,7 @@ def get_territories():
         frappe.log_error(f"Error fetching territories: {str(e)}", "Sales Order Form - Get Territories")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customer_groups():
     """Get list of customer groups for the dropdown"""
     try:
@@ -126,7 +126,7 @@ def get_customer_groups():
         frappe.log_error(f"Error fetching customer groups: {str(e)}", "Sales Order Form - Get Customer Groups")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_price_lists():
     """Get list of selling price lists"""
     try:
@@ -141,7 +141,7 @@ def get_price_lists():
         frappe.log_error(f"Error fetching price lists: {str(e)}", "Sales Order Form - Get Price Lists")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_cities():
     """Get list of cities for the dropdown"""
     try:
@@ -156,7 +156,7 @@ def get_cities():
         frappe.log_error(f"Error fetching cities: {str(e)}", "Sales Order Form - Get Cities")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_neighborhoods(city=None):
     """Get list of neighborhoods for the dropdown, optionally filtered by city"""
     try:
@@ -181,7 +181,7 @@ def get_neighborhoods(city=None):
         frappe.log_error(f"Error fetching neighborhoods: {str(e)}", "Sales Order Form - Get Neighborhoods")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customer_details(customer):
     """Get detailed customer information"""
     try:
@@ -255,7 +255,7 @@ def get_customer_details(customer):
         frappe.log_error(f"Error fetching customer details: {str(e)}", "Sales Order Form - Get Customer Details")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_item_details(item_code, customer=None, company=None, price_list=None):
     """Get detailed item information including price"""
     try:
@@ -306,7 +306,7 @@ def get_item_details(item_code, customer=None, company=None, price_list=None):
         frappe.log_error(f"Error fetching item details: {str(e)}", "Sales Order Form - Get Item Details")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_sales_order(sales_order_data):
     """Create a new sales order in ERPNext"""
     try:
@@ -482,7 +482,7 @@ def create_sales_order(sales_order_data):
         frappe.log_error(f"Error creating sales order: {str(e)}", "Sales Order Form - Create Sales Order")
         return {"success": False, "message": f"Error creating sales order: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_master_data():
     """Get all master data in one API call for better performance"""
     try:
@@ -517,7 +517,7 @@ def get_master_data():
         frappe.log_error(f"Error fetching master data: {str(e)}", "Sales Order Form - Get Master Data")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def validate_sales_order_data(sales_order_data):
     """Validate sales order data before creation"""
     try:
@@ -565,7 +565,7 @@ def validate_sales_order_data(sales_order_data):
         frappe.log_error(f"Error validating sales order data: {str(e)}", "Sales Order Form - Validate Data")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customer_email(customer_name):
     """Get customer email from multiple sources"""
     try:
@@ -633,7 +633,7 @@ def get_customer_email(customer_name):
         frappe.log_error(f"Error getting customer email: {str(e)}", "Sales Order Form - Get Customer Email")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def send_sales_order_email(sales_order_name, customer_name=None, customer_email=None):
     """Send Sales Order PDF via email"""
     try:
@@ -726,7 +726,7 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         frappe.log_error(f"Error sending sales order email: {str(e)}", "Sales Order Form - Send Email")
         return {"success": False, "message": f"Error sending email: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def test_email_retrieval(customer_name):
     """Simple test to check if we can find customer email"""
     try:
@@ -741,7 +741,7 @@ def test_email_retrieval(customer_name):
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def debug_customer_email(customer_name):
     """Debug method to check customer email retrieval"""
     try:
@@ -814,7 +814,7 @@ def debug_customer_email(customer_name):
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_customer(customer_data):
     """Create a new customer in ERPNext"""
     try:
@@ -937,7 +937,7 @@ def create_customer(customer_data):
         frappe.log_error(f"Error creating customer: {str(e)}", "Sales Order Form - Create Customer")
         return {"success": False, "message": f"Error creating customer: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_cleaning_teams():
     """Get list of cleaning teams for the dropdown - temporarily disabled"""
     """
@@ -954,7 +954,7 @@ def get_cleaning_teams():
     """
     return {"success": True, "data": []}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_payment_modes():
     """Get list of payment modes for the dropdown"""
     try:
@@ -968,7 +968,7 @@ def get_payment_modes():
         frappe.log_error(f"Error fetching payment modes: {str(e)}", "Sales Order Form - Get Payment Modes")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_payment_entry(sales_order_name, mode_of_payment, payment_slip_file=None, payment_slip_filename=None):
     """Create a payment entry for a sales order"""
     try:
@@ -1081,7 +1081,7 @@ def create_payment_entry(sales_order_name, mode_of_payment, payment_slip_file=No
         frappe.log_error(f"Error creating payment entry: {str(e)}", "Sales Order Form - Create Payment Entry")
         return {"success": False, "message": f"Error creating payment entry: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def download_sales_order_pdf(sales_order_name):
     """Generate and return Sales Order PDF in SS Order format"""
     try:
@@ -1120,7 +1120,7 @@ def download_sales_order_pdf(sales_order_name):
         frappe.log_error(f"Error generating sales order PDF: {str(e)}", "Sales Order Form - Download PDF")
         return {"success": False, "message": f"Error generating PDF: {str(e)}"}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_cleaning_teams_list():
     """Get list of all cleaning teams for availability viewer"""
     try:
@@ -1134,7 +1134,7 @@ def get_cleaning_teams_list():
         frappe.log_error(f"Error fetching cleaning teams list: {str(e)}", "Sales Order Form - Get Teams")
         return {"success": False, "message": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_team_availability(team_name, date=None):
     """Get team availability for a specific date"""
     try:
