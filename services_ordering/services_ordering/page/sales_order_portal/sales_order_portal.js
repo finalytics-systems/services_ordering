@@ -147,7 +147,6 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 
 	// Load external dependencies
 	frappe.require([
-		'/assets/frappe/js/lib/jquery/jquery.min.js',
 		'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css',
 		'https://unpkg.com/vue@3/dist/vue.global.js'
 	], function() {
