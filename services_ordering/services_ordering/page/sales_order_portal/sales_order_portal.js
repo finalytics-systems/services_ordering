@@ -193,7 +193,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						delivery_date: '',
 						customTime: '',
 						currency: 'SAR',
-						selling_price_list: 'Standard Selling',
+						selling_price_list: 'البيع القياسية',
 						company: '',
 						priority: 'Medium',
 						order_type: 'Sales'
@@ -1097,7 +1097,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							delivery_date: '',
 							customTime: '',
 							currency: 'SAR',
-							selling_price_list: 'Standard Selling',
+							selling_price_list: 'البيع القياسية',
 							company: '',
 							priority: 'Medium',
 							order_type: 'Sales'

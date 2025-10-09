@@ -76,6 +76,22 @@ def get_items():
             order_by="item_name asc",
             limit=500
         )
+        
+        # Get prices from Item Price list for each item
+        for item in items:
+            price_doc = frappe.get_all(
+                "Item Price",
+                fields=["price_list_rate"],
+                filters={
+                    "item_code": item.name,
+                    "price_list": "البيع القياسية",
+                    "selling": 1
+                },
+                limit=1
+            )
+            if price_doc:
+                item["standard_rate"] = price_doc[0].price_list_rate
+        
         return {"success": True, "data": items}
     except Exception as e:
         frappe.log_error(f"Error fetching items: {str(e)}", "Sales Order Form - Get Items")
