@@ -370,6 +370,12 @@ def create_sales_order(sales_order_data):
             sales_order.custom_team = sales_order_data.get("team")
             print(f"Setting custom_team to {sales_order_data.get('team')}")
             frappe.log_error(f"Setting custom_team to {sales_order_data.get('team')}", "Sales Order Form - Custom Team")
+        
+        # Handle payment mode
+        if sales_order_data.get("custom_payment_mode"):
+            sales_order.custom_payment_mode = sales_order_data.get("custom_payment_mode")
+            print(f"Setting custom_payment_mode to {sales_order_data.get('custom_payment_mode')}")
+            frappe.log_error(f"Setting custom_payment_mode to {sales_order_data.get('custom_payment_mode')}", "Sales Order Form - Custom Payment Mode")
             
         if sales_order_data.get("source"):
             sales_order.source = sales_order_data.get("source")
@@ -389,6 +395,13 @@ def create_sales_order(sales_order_data):
         # Terms and conditions
         if sales_order_data.get("tc_name"):
             sales_order.tc_name = sales_order_data.get("tc_name")
+            # Fetch terms content from Terms and Conditions template
+            try:
+                tc_doc = frappe.get_doc("Terms and Conditions", sales_order_data.get("tc_name"))
+                if tc_doc and tc_doc.terms:
+                    sales_order.terms = tc_doc.terms
+            except Exception as e:
+                frappe.log_error(f"Error fetching terms and conditions: {str(e)}", "Sales Order Form - Terms and Conditions")
         if sales_order_data.get("terms"):
             sales_order.terms = sales_order_data.get("terms")
         
@@ -651,7 +664,7 @@ def get_customer_email(customer_name):
 
 @frappe.whitelist()
 def send_sales_order_email(sales_order_name, customer_name=None, customer_email=None):
-    """Send Sales Order PDF via email"""
+    """Send Sales Order PDF via email with Paymob payment link"""
     try:
         if not sales_order_name:
             return {"success": False, "message": "Sales Order name is required"}
@@ -674,6 +687,43 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         # Get Sales Order document
         sales_order = frappe.get_doc("Sales Order", sales_order_name)
         
+        # Generate Paymob payment link if not already generated
+        payment_link = None
+        payment_link_html = ""
+        try:
+            # Check if payment link already exists
+            if hasattr(sales_order, 'paymob_payment_link') and sales_order.paymob_payment_link:
+                payment_link = sales_order.paymob_payment_link
+            else:
+                # Generate new payment link using Paymob API
+                from paymob_integration.paymob_integration.api import PaymobAPI
+                paymob_api = PaymobAPI()
+                payment_link = paymob_api.generate_payment_link(sales_order)
+            
+            # Add payment link section to email if link was generated
+            if payment_link:
+                payment_link_html = f"""
+                <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                    <h3 style="margin-top: 0; color: #856404;">💳 Complete Your Payment</h3>
+                    <p style="color: #856404;">Click the button below to pay securely using Paymob:</p>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <a href="{payment_link}" 
+                           style="background-color: #28a745; color: white; padding: 15px 40px; 
+                                  text-decoration: none; border-radius: 5px; font-weight: bold;
+                                  display: inline-block; font-size: 16px;">
+                            Pay Now - {sales_order.currency} {sales_order.grand_total:,.2f}
+                        </a>
+                    </div>
+                    <p style="font-size: 12px; color: #856404; text-align: center;">
+                        Secure payment powered by Paymob | Link expires in 1 hour
+                    </p>
+                </div>
+                """
+        except Exception as payment_error:
+            # Log the error but don't fail the email
+            frappe.log_error(f"Failed to generate Paymob payment link: {str(payment_error)}", "Paymob Payment Link Error")
+            # Continue sending email without payment link
+        
         # Prepare email content
         subject = f"Sales Order {sales_order_name} - {sales_order.customer_name}"
         message = f"""
@@ -688,6 +738,8 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
                 <p><strong>Total Amount:</strong> {sales_order.currency} {sales_order.grand_total:,.2f}</p>
                 {f"<p><strong>Delivery Date:</strong> {sales_order.delivery_date}</p>" if sales_order.delivery_date else ""}
             </div>
+            
+            {payment_link_html}
             
             <p>If you have any questions about your order, please don't hesitate to contact us.</p>
             
@@ -706,7 +758,7 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         # Simple email sending with proper permissions
         try:
             # Generate PDF
-            pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+            # pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
             
             # Send email using frappe.sendmail with proper context
             frappe.sendmail(
@@ -715,10 +767,10 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
                 message=message,
                 reference_doctype="Sales Order",
                 reference_name=sales_order_name,
-                attachments=[{
-                    "fname": f"{sales_order_name}.pdf",
-                    "fcontent": pdf_content
-                }]
+                # attachments=[{
+                #     "fname": f"{sales_order_name}.pdf",
+                #     "fcontent": pdf_content
+                # }]
             )
             
         except Exception as email_error:

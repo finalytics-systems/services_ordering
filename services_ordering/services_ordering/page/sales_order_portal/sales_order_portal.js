@@ -186,18 +186,20 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 					console.log('Vue setup function called');
 					
 					// Form data
-					const salesOrder = ref({
-						customer: '',
-						customer_name: '',
-						transaction_date: new Date().toISOString().split('T')[0],
-						delivery_date: '',
-						customTime: '',
-						currency: 'SAR',
-						selling_price_list: 'البيع القياسية',
-						company: '',
-						priority: 'Medium',
-						order_type: 'Sales'
-					});
+				const salesOrder = ref({
+					customer: '',
+					customer_name: '',
+					transaction_date: new Date().toISOString().split('T')[0],
+					delivery_date: '',
+					customTime: '',
+					payment_mode: '',
+					currency: 'SAR',
+					selling_price_list: 'البيع القياسية',
+					company: '',
+					priority: 'Medium',
+					order_type: 'Sales',
+					tc_name: 'Everclean Sales Order'
+				});
 
 					const items = ref([]);
 					const loading = ref(false);
@@ -1016,12 +1018,13 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 								return;
 							}
 
-							// Prepare sales order data
-							const salesOrderData = {
-								...salesOrder.value,
-								items: items.value,
-								custom_time: salesOrder.value.customTime
-							};
+					// Prepare sales order data
+					const salesOrderData = {
+						...salesOrder.value,
+						items: items.value,
+						custom_time: salesOrder.value.customTime,
+						custom_payment_mode: salesOrder.value.payment_mode
+					};
 
 							console.log('Creating sales order:', salesOrderData);
 
@@ -1096,11 +1099,13 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							transaction_date: new Date().toISOString().split('T')[0],
 							delivery_date: '',
 							customTime: '',
+							payment_mode: '',
 							currency: 'SAR',
 							selling_price_list: 'البيع القياسية',
 							company: '',
 							priority: 'Medium',
-							order_type: 'Sales'
+							order_type: 'Sales',
+							tc_name: 'Everclean Sales Order'
 						};
 						items.value = [];
 						lastCreatedSalesOrder.value = null;
@@ -1514,53 +1519,65 @@ class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none f
 >
 </div>
 
-<div>
-<label class="block text-sm font-medium text-gray-700 mb-2">Expected Service Time (24h format)</label>
-<select
-v-model="salesOrder.customTime"
-class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
->
-<option value="">Select time...</option>
-<option value="00:00">00:00</option>
-<option value="01:00">01:00</option>
-<option value="02:00">02:00</option>
-<option value="03:00">03:00</option>
-<option value="04:00">04:00</option>
-<option value="05:00">05:00</option>
-<option value="06:00">06:00</option>
-<option value="07:00">07:00</option>
-<option value="08:00">08:00</option>
-<option value="09:00">09:00</option>
-<option value="10:00">10:00</option>
-<option value="11:00">11:00</option>
-<option value="12:00">12:00</option>
-<option value="13:00">13:00</option>
-<option value="14:00">14:00</option>
-<option value="15:00">15:00</option>
-<option value="16:00">16:00</option>
-<option value="17:00">17:00</option>
-<option value="18:00">18:00</option>
-<option value="19:00">19:00</option>
-<option value="20:00">20:00</option>
-<option value="21:00">21:00</option>
-<option value="22:00">22:00</option>
-<option value="23:00">23:00</option>
-</select>
-<span class="text-xs text-gray-500 mt-1 block">Time shown in 24-hour format with AM/PM reference</span>
-</div>
+			<div>
+			<label class="block text-sm font-medium text-gray-700 mb-2">Expected Service Time (24h format)</label>
+			<select
+			v-model="salesOrder.customTime"
+			class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+			>
+			<option value="">Select time...</option>
+			<option value="00:00">00:00</option>
+			<option value="01:00">01:00</option>
+			<option value="02:00">02:00</option>
+			<option value="03:00">03:00</option>
+			<option value="04:00">04:00</option>
+			<option value="05:00">05:00</option>
+			<option value="06:00">06:00</option>
+			<option value="07:00">07:00</option>
+			<option value="08:00">08:00</option>
+			<option value="09:00">09:00</option>
+			<option value="10:00">10:00</option>
+			<option value="11:00">11:00</option>
+			<option value="12:00">12:00</option>
+			<option value="13:00">13:00</option>
+			<option value="14:00">14:00</option>
+			<option value="15:00">15:00</option>
+			<option value="16:00">16:00</option>
+			<option value="17:00">17:00</option>
+			<option value="18:00">18:00</option>
+			<option value="19:00">19:00</option>
+			<option value="20:00">20:00</option>
+			<option value="21:00">21:00</option>
+			<option value="22:00">22:00</option>
+			<option value="23:00">23:00</option>
+			</select>
+			<span class="text-xs text-gray-500 mt-1 block">Time shown in 24-hour format with AM/PM reference</span>
+			</div>
 
-<div>
-<label class="block text-sm font-medium text-gray-700 mb-2">Team Availability</label>
-<button 
-@click="openTeamAvailabilityPopup"
-class="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center justify-center font-medium"
->
-<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-</svg>
-Check Team Schedule
-</button>
-</div>
+			<div>
+			<label class="block text-sm font-medium text-gray-700 mb-2">Payment Mode *</label>
+			<select
+			v-model="salesOrder.payment_mode"
+			class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+			>
+			<option value="">Select payment mode...</option>
+			<option value="POS">POS</option>
+			<option value="Bank">Bank</option>
+			</select>
+			</div>
+
+			<div>
+			<label class="block text-sm font-medium text-gray-700 mb-2">Team Availability</label>
+			<button 
+			@click="openTeamAvailabilityPopup"
+			class="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center justify-center font-medium"
+			>
+			<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+			</svg>
+			Check Team Schedule
+			</button>
+			</div>
 
 <!-- Time dropdown temporarily disabled
 <div>
