@@ -758,7 +758,7 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         # Simple email sending with proper permissions
         try:
             # Generate PDF
-            # pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+            pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
             
             # Send email using frappe.sendmail with proper context
             frappe.sendmail(
@@ -767,10 +767,10 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
                 message=message,
                 reference_doctype="Sales Order",
                 reference_name=sales_order_name,
-                # attachments=[{
-                #     "fname": f"{sales_order_name}.pdf",
-                #     "fcontent": pdf_content
-                # }]
+                attachments=[{
+                    "fname": f"{sales_order_name}.pdf",
+                    "fcontent": pdf_content
+                }]
             )
             
         except Exception as email_error:
