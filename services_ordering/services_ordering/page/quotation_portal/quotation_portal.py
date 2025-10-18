@@ -25,7 +25,7 @@ def get_customers():
         )
         return {"success": True, "data": customers}
     except Exception as e:
-        frappe.log_error(f"Error fetching customers: {str(e)}", "Sales Order Form - Get Customers")
+        frappe.log_error(f"Error fetching customers: {str(e)}", "Quotation Form - Get Customers")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -39,7 +39,7 @@ def get_companies():
         )
         return {"success": True, "data": companies}
     except Exception as e:
-        frappe.log_error(f"Error fetching companies: {str(e)}", "Sales Order Form - Get Companies")
+        frappe.log_error(f"Error fetching companies: {str(e)}", "Quotation Form - Get Companies")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -94,7 +94,7 @@ def get_items():
         
         return {"success": True, "data": items}
     except Exception as e:
-        frappe.log_error(f"Error fetching items: {str(e)}", "Sales Order Form - Get Items")
+        frappe.log_error(f"Error fetching items: {str(e)}", "Quotation Form - Get Items")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -109,7 +109,7 @@ def get_warehouses():
         )
         return {"success": True, "data": warehouses}
     except Exception as e:
-        frappe.log_error(f"Error fetching warehouses: {str(e)}", "Sales Order Form - Get Warehouses")
+        frappe.log_error(f"Error fetching warehouses: {str(e)}", "Quotation Form - Get Warehouses")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -124,7 +124,7 @@ def get_territories():
         )
         return {"success": True, "data": territories}
     except Exception as e:
-        frappe.log_error(f"Error fetching territories: {str(e)}", "Sales Order Form - Get Territories")
+        frappe.log_error(f"Error fetching territories: {str(e)}", "Quotation Form - Get Territories")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -139,7 +139,7 @@ def get_customer_groups():
         )
         return {"success": True, "data": customer_groups}
     except Exception as e:
-        frappe.log_error(f"Error fetching customer groups: {str(e)}", "Sales Order Form - Get Customer Groups")
+        frappe.log_error(f"Error fetching customer groups: {str(e)}", "Quotation Form - Get Customer Groups")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -154,7 +154,7 @@ def get_price_lists():
         )
         return {"success": True, "data": price_lists}
     except Exception as e:
-        frappe.log_error(f"Error fetching price lists: {str(e)}", "Sales Order Form - Get Price Lists")
+        frappe.log_error(f"Error fetching price lists: {str(e)}", "Quotation Form - Get Price Lists")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -169,7 +169,7 @@ def get_cities():
         )
         return {"success": True, "data": cities}
     except Exception as e:
-        frappe.log_error(f"Error fetching cities: {str(e)}", "Sales Order Form - Get Cities")
+        frappe.log_error(f"Error fetching cities: {str(e)}", "Quotation Form - Get Cities")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -194,7 +194,7 @@ def get_neighborhoods(city=None):
         )
         return {"success": True, "data": neighborhoods}
     except Exception as e:
-        frappe.log_error(f"Error fetching neighborhoods: {str(e)}", "Sales Order Form - Get Neighborhoods")
+        frappe.log_error(f"Error fetching neighborhoods: {str(e)}", "Quotation Form - Get Neighborhoods")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -268,7 +268,7 @@ def get_customer_details(customer):
         
         return {"success": True, "data": customer_details}
     except Exception as e:
-        frappe.log_error(f"Error fetching customer details: {str(e)}", "Sales Order Form - Get Customer Details")
+        frappe.log_error(f"Error fetching customer details: {str(e)}", "Quotation Form - Get Customer Details")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -319,120 +319,101 @@ def get_item_details(item_code, customer=None, company=None, price_list=None):
         
         return {"success": True, "data": item_details}
     except Exception as e:
-        frappe.log_error(f"Error fetching item details: {str(e)}", "Sales Order Form - Get Item Details")
+        frappe.log_error(f"Error fetching item details: {str(e)}", "Quotation Form - Get Item Details")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
-def create_sales_order(sales_order_data):
-    """Create a new sales order in ERPNext"""
+def create_quotation(quotation_data):
+    """Create a new quotation in ERPNext"""
     try:
         # Parse the JSON data if it's a string
-        if isinstance(sales_order_data, str):
-            sales_order_data = json.loads(sales_order_data)
+        if isinstance(quotation_data, str):
+            quotation_data = json.loads(quotation_data)
         
         # Validate required fields
-        if not sales_order_data.get("customer"):
+        if not quotation_data.get("customer"):
             return {"success": False, "message": "Customer is required"}
         
-        if not sales_order_data.get("items") or len(sales_order_data.get("items", [])) == 0:
+        if not quotation_data.get("items") or len(quotation_data.get("items", [])) == 0:
             return {"success": False, "message": "At least one item is required"}
         
-        # Create new Sales Order document
-        sales_order = frappe.new_doc("Sales Order")
+        # Create new Quotation document
+        quotation = frappe.new_doc("Quotation")
         
         # Set basic fields with static values
-        sales_order.customer = sales_order_data.get("customer")
-        sales_order.company = "Sage Services Co Ltd"  # Static company
-        sales_order.currency = "SAR"  # Static currency
-        sales_order.transaction_date = sales_order_data.get("transaction_date", nowdate())
-        sales_order.delivery_date = sales_order_data.get("delivery_date")
-        pl_candidate = sales_order_data.get("selling_price_list") or sales_order_data.get("price_list")
+        quotation.quotation_to = "Customer"  # Quotation to Customer
+        quotation.party_name = quotation_data.get("customer")  # Customer name in party_name field
+        quotation.company = "Sage Services Co Ltd"  # Static company
+        quotation.currency = "SAR"  # Static currency
+        quotation.transaction_date = quotation_data.get("transaction_date", nowdate())
+        quotation.valid_till = quotation_data.get("delivery_date") or quotation_data.get("valid_till")  # Using delivery_date as valid_till for quotation
+        pl_candidate = quotation_data.get("selling_price_list") or quotation_data.get("price_list")
         valid_price_list = None
         if pl_candidate and frappe.db.exists("Price List", {"name": pl_candidate, "enabled": 1, "selling": 1}):
             valid_price_list = pl_candidate
-            sales_order.selling_price_list = pl_candidate
+            quotation.selling_price_list = pl_candidate
         
         # Optional fields
-        if sales_order_data.get("customer_group"):
-            sales_order.customer_group = sales_order_data.get("customer_group")
-        if sales_order_data.get("territory"):
-            sales_order.territory = sales_order_data.get("territory")
-        if sales_order_data.get("order_type"):
-            sales_order.order_type = sales_order_data.get("order_type", "Sales")
+        if quotation_data.get("customer_group"):
+            quotation.customer_group = quotation_data.get("customer_group")
+        if quotation_data.get("territory"):
+            quotation.territory = quotation_data.get("territory")
         
-        # Handle new fields (time and team)
-        if sales_order_data.get("custom_time"):
-            sales_order.custom_time = sales_order_data.get("custom_time")
-            print(f"Setting custom_time to {sales_order_data.get('custom_time')}")
-            frappe.log_error(f"Setting custom_time to {sales_order_data.get('custom_time')}", "Sales Order Form - Custom Time")
+        # Handle custom payment mode field
+        if quotation_data.get("custom_payment_mode"):
+            quotation.custom_payment_mode = quotation_data.get("custom_payment_mode")
+            print(f"Setting custom_payment_mode to {quotation_data.get('custom_payment_mode')}")
+            frappe.log_error(f"Setting custom_payment_mode to {quotation_data.get('custom_payment_mode')}", "Quotation Form - Custom Payment Mode")
             
-        if sales_order_data.get("team"):
-            sales_order.custom_team = sales_order_data.get("team")
-            print(f"Setting custom_team to {sales_order_data.get('team')}")
-            frappe.log_error(f"Setting custom_team to {sales_order_data.get('team')}", "Sales Order Form - Custom Team")
-        
-        # Handle payment mode
-        if sales_order_data.get("custom_payment_mode"):
-            sales_order.custom_payment_mode = sales_order_data.get("custom_payment_mode")
-            print(f"Setting custom_payment_mode to {sales_order_data.get('custom_payment_mode')}")
-            frappe.log_error(f"Setting custom_payment_mode to {sales_order_data.get('custom_payment_mode')}", "Sales Order Form - Custom Payment Mode")
-            
-        if sales_order_data.get("source"):
-            sales_order.source = sales_order_data.get("source")
-        if sales_order_data.get("project"):
-            sales_order.project = sales_order_data.get("project")
-        if sales_order_data.get("cost_center"):
-            sales_order.cost_center = sales_order_data.get("cost_center")
+        if quotation_data.get("source"):
+            quotation.source = quotation_data.get("source")
+        if quotation_data.get("project"):
+            quotation.project = quotation_data.get("project")
+        if quotation_data.get("cost_center"):
+            quotation.cost_center = quotation_data.get("cost_center")
         
         # Address and contact details
-        if sales_order_data.get("customer_address"):
-            sales_order.customer_address = sales_order_data.get("customer_address")
-        if sales_order_data.get("shipping_address_name"):
-            sales_order.shipping_address_name = sales_order_data.get("shipping_address_name")
-        if sales_order_data.get("contact_person"):
-            sales_order.contact_person = sales_order_data.get("contact_person")
+        if quotation_data.get("customer_address"):
+            quotation.customer_address = quotation_data.get("customer_address")
+        if quotation_data.get("shipping_address_name"):
+            quotation.shipping_address_name = quotation_data.get("shipping_address_name")
+        if quotation_data.get("contact_person"):
+            quotation.contact_person = quotation_data.get("contact_person")
         
         # Terms and conditions
-        if sales_order_data.get("tc_name"):
-            sales_order.tc_name = sales_order_data.get("tc_name")
-            # Fetch terms content from Terms and Conditions template
-            try:
-                tc_doc = frappe.get_doc("Terms and Conditions", sales_order_data.get("tc_name"))
-                if tc_doc and tc_doc.terms:
-                    sales_order.terms = tc_doc.terms
-            except Exception as e:
-                frappe.log_error(f"Error fetching terms and conditions: {str(e)}", "Sales Order Form - Terms and Conditions")
-        if sales_order_data.get("terms"):
-            sales_order.terms = sales_order_data.get("terms")
+        if quotation_data.get("tc_name"):
+            quotation.tc_name = quotation_data.get("tc_name")
+        if quotation_data.get("terms"):
+            quotation.terms = quotation_data.get("terms")
         
         # Payment terms
-        if sales_order_data.get("payment_terms_template"):
-            sales_order.payment_terms_template = sales_order_data.get("payment_terms_template")
+        if quotation_data.get("payment_terms_template"):
+            quotation.payment_terms_template = quotation_data.get("payment_terms_template")
         
         # Taxes and charges - skip setting template and directly add tax row
-        # if sales_order_data.get("taxes_and_charges"):
-        #     sales_order.taxes_and_charges = sales_order_data.get("taxes_and_charges")
+        # if quotation_data.get("taxes_and_charges"):
+        #     quotation.taxes_and_charges = quotation_data.get("taxes_and_charges")
         # else:
         #     # Set the template exactly as shown in the system
-        #     sales_order.taxes_and_charges = "VAT 15%"
+        #     quotation.taxes_and_charges = "VAT 15%"
         
         # Always add the tax row directly
-        tax_row = sales_order.append("taxes", {})
+        tax_row = quotation.append("taxes", {})
         tax_row.charge_type = "On Net Total"
         tax_row.account_head = "KSA VAT15% - SSC"
         tax_row.description = "VAT 15%"
         tax_row.rate = 15
         
         # Shipping
-        if sales_order_data.get("shipping_rule"):
-            sales_order.shipping_rule = sales_order_data.get("shipping_rule")
+        if quotation_data.get("shipping_rule"):
+            quotation.shipping_rule = quotation_data.get("shipping_rule")
         
         # Add items
-        for item_data in sales_order_data.get("items", []):
+        for item_data in quotation_data.get("items", []):
             if not item_data.get("item_code") or not item_data.get("qty"):
                 continue
                 
-            item_row = sales_order.append("items", {})
+            item_row = quotation.append("items", {})
             item_row.item_code = item_data.get("item_code")
             item_row.qty = flt(item_data.get("qty", 1))
             # Use client-provided rate if positive; else compute from price list or standard_rate
@@ -481,35 +462,34 @@ def create_sales_order(sales_order_data):
         # Do not apply document-level discounts from client on public endpoint
         
         # Insert the document
-        sales_order.insert(ignore_permissions=True)
+        quotation.insert(ignore_permissions=True)
         
-        # Submit if auto-submit is enabled (optional)
-        sales_order.submit()
+        # Save the quotation (don't auto-submit)
+        # quotation.submit()  # Quotations typically need manual review before submission
         
         # Calculate totals with VAT
-        total_amount = flt(sales_order.net_total or sales_order.total or 0)
+        total_amount = flt(quotation.net_total or quotation.total or 0)
         vat_amount = total_amount * 0.15  # 15% VAT
         grand_total_with_vat = total_amount + vat_amount
         
         return {
             "success": True, 
-            "message": f"Sales Order {sales_order.name} created successfully!",
-            "sales_order_name": sales_order.name,
+            "message": f"Quotation {quotation.name} created successfully!",
+            "quotation_name": quotation.name,
             "data": {
-                "name": sales_order.name,
-                "customer": sales_order.customer,
+                "name": quotation.name,
+                "customer": quotation.party_name,
                 "total_amount": total_amount,
                 "vat_amount": vat_amount,
                 "grand_total": grand_total_with_vat,
-                "status": sales_order.status,
-                "custom_time": sales_order_data.get("custom_time"),
-                "custom_team": sales_order_data.get("team")
+                "status": quotation.status,
+                "custom_payment_mode": quotation_data.get("custom_payment_mode")
             }
         }
         
     except Exception as e:
-        frappe.log_error(f"Error creating sales order: {str(e)}", "Sales Order Form - Create Sales Order")
-        return {"success": False, "message": f"Error creating sales order: {str(e)}"}
+        frappe.log_error(f"Error creating quotation: {str(e)}", "Quotation Form - Create Quotation")
+        return {"success": False, "message": f"Error creating quotation: {str(e)}"}
 
 @frappe.whitelist()
 def get_master_data():
@@ -543,30 +523,30 @@ def get_master_data():
             }
         }
     except Exception as e:
-        frappe.log_error(f"Error fetching master data: {str(e)}", "Sales Order Form - Get Master Data")
+        frappe.log_error(f"Error fetching master data: {str(e)}", "Quotation Form - Get Master Data")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
-def validate_sales_order_data(sales_order_data):
+def validate_quotation_data(quotation_data):
     """Validate sales order data before creation"""
     try:
-        if isinstance(sales_order_data, str):
-            sales_order_data = json.loads(sales_order_data)
+        if isinstance(quotation_data, str):
+            quotation_data = json.loads(quotation_data)
         
         errors = []
         
         # Check required fields
-        if not sales_order_data.get("customer"):
+        if not quotation_data.get("customer"):
             errors.append("Customer is required")
         
-        if not sales_order_data.get("company"):
+        if not quotation_data.get("company"):
             errors.append("Company is required")
         
-        if not sales_order_data.get("items") or len(sales_order_data.get("items", [])) == 0:
+        if not quotation_data.get("items") or len(quotation_data.get("items", [])) == 0:
             errors.append("At least one item is required")
         
         # Validate items
-        for i, item in enumerate(sales_order_data.get("items", [])):
+        for i, item in enumerate(quotation_data.get("items", [])):
             if not item.get("item_code"):
                 errors.append(f"Item code is required for item {i+1}")
             if not item.get("qty") or flt(item.get("qty")) <= 0:
@@ -575,13 +555,13 @@ def validate_sales_order_data(sales_order_data):
                 errors.append(f"Valid rate is required for item {i+1}")
         
         # Check if customer exists
-        if sales_order_data.get("customer"):
-            if not frappe.db.exists("Customer", sales_order_data.get("customer")):
+        if quotation_data.get("customer"):
+            if not frappe.db.exists("Customer", quotation_data.get("customer")):
                 errors.append("Selected customer does not exist")
         
         # Check if company exists
-        if sales_order_data.get("company"):
-            if not frappe.db.exists("Company", sales_order_data.get("company")):
+        if quotation_data.get("company"):
+            if not frappe.db.exists("Company", quotation_data.get("company")):
                 errors.append("Selected company does not exist")
         
         return {
@@ -591,7 +571,7 @@ def validate_sales_order_data(sales_order_data):
         }
         
     except Exception as e:
-        frappe.log_error(f"Error validating sales order data: {str(e)}", "Sales Order Form - Validate Data")
+        frappe.log_error(f"Error validating sales order data: {str(e)}", "Quotation Form - Validate Data")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -659,15 +639,15 @@ def get_customer_email(customer_name):
             return {"success": False, "message": "No email found for this customer"}
             
     except Exception as e:
-        frappe.log_error(f"Error getting customer email: {str(e)}", "Sales Order Form - Get Customer Email")
+        frappe.log_error(f"Error getting customer email: {str(e)}", "Quotation Form - Get Customer Email")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
-def send_sales_order_email(sales_order_name, customer_name=None, customer_email=None):
-    """Send Sales Order PDF via email with Paymob payment link"""
+def send_quotation_email(quotation_name, customer_name=None, customer_email=None):
+    """Send Quotation PDF via email"""
     try:
-        if not sales_order_name:
-            return {"success": False, "message": "Sales Order name is required"}
+        if not quotation_name:
+            return {"success": False, "message": "Quotation name is required"}
         
         # If no email provided, try to get it from customer
         if not customer_email and customer_name:
@@ -680,70 +660,34 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         if not customer_email:
             return {"success": False, "message": "Customer email is required"}
         
-        # Check if Sales Order exists
-        if not frappe.db.exists("Sales Order", sales_order_name):
-            return {"success": False, "message": "Sales Order not found"}
+        # Check if Quotation exists
+        if not frappe.db.exists("Quotation", quotation_name):
+            return {"success": False, "message": "Quotation not found"}
         
-        # Get Sales Order document
-        sales_order = frappe.get_doc("Sales Order", sales_order_name)
+        # Get Quotation document
+        quotation = frappe.get_doc("Quotation", quotation_name)
         
-        # Generate Paymob payment link if not already generated
-        payment_link = None
-        payment_link_html = ""
-        try:
-            # Check if payment link already exists
-            if hasattr(sales_order, 'paymob_payment_link') and sales_order.paymob_payment_link:
-                payment_link = sales_order.paymob_payment_link
-            else:
-                # Generate new payment link using Paymob API
-                from paymob_integration.paymob_integration.api import PaymobAPI
-                paymob_api = PaymobAPI()
-                payment_link = paymob_api.generate_payment_link(sales_order)
-            
-            # Add payment link section to email if link was generated
-            if payment_link:
-                payment_link_html = f"""
-                <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                    <h3 style="margin-top: 0; color: #856404;">💳 Complete Your Payment</h3>
-                    <p style="color: #856404;">Click the button below to pay securely using Paymob:</p>
-                    <div style="text-align: center; margin: 20px 0;">
-                        <a href="{payment_link}" 
-                           style="background-color: #28a745; color: white; padding: 15px 40px; 
-                                  text-decoration: none; border-radius: 5px; font-weight: bold;
-                                  display: inline-block; font-size: 16px;">
-                            Pay Now - {sales_order.currency} {sales_order.grand_total:,.2f}
-                        </a>
-                    </div>
-                    <p style="font-size: 12px; color: #856404; text-align: center;">
-                        Secure payment powered by Paymob | Link expires in 1 hour
-                    </p>
-                </div>
-                """
-        except Exception as payment_error:
-            # Log the error but don't fail the email
-            frappe.log_error(f"Failed to generate Paymob payment link: {str(payment_error)}", "Paymob Payment Link Error")
-            # Continue sending email without payment link
+        # Get customer name (party_name for Quotation)
+        customer_display_name = quotation.party_name or customer_name or "Customer"
         
         # Prepare email content
-        subject = f"Sales Order {sales_order_name} - {sales_order.customer_name}"
+        subject = f"Quotation {quotation_name} - {customer_display_name}"
         message = f"""
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2 style="color: #2c5aa0;">Sales Order Confirmation</h2>
-            <p>Dear {sales_order.customer_name},</p>
-            <p>Thank you for your order! Please find attached your Sales Order <strong>{sales_order_name}</strong>.</p>
+            <h2 style="color: #2c5aa0;">Quotation Confirmation</h2>
+            <p>Dear {customer_display_name},</p>
+            <p>Thank you for your interest! Please find attached your Quotation <strong>{quotation_name}</strong>.</p>
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0; color: #2c5aa0;">Order Summary:</h3>
-                <p><strong>Order Date:</strong> {sales_order.transaction_date}</p>
-                <p><strong>Total Amount:</strong> {sales_order.currency} {sales_order.grand_total:,.2f}</p>
-                {f"<p><strong>Delivery Date:</strong> {sales_order.delivery_date}</p>" if sales_order.delivery_date else ""}
+                <h3 style="margin-top: 0; color: #2c5aa0;">Quotation Summary:</h3>
+                <p><strong>Quotation Date:</strong> {quotation.transaction_date}</p>
+                <p><strong>Total Amount:</strong> {quotation.currency} {quotation.grand_total:,.2f}</p>
+                {f"<p><strong>Valid Till:</strong> {quotation.valid_till}</p>" if quotation.valid_till else ""}
             </div>
             
-            {payment_link_html}
+            <p>If you have any questions about this quotation, please don't hesitate to contact us.</p>
             
-            <p>If you have any questions about your order, please don't hesitate to contact us.</p>
-            
-            <p>Thank you for your business!</p>
+            <p>We look forward to serving you!</p>
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
                 <p style="margin: 0;"><strong>Sage Services Co Ltd</strong></p>
@@ -758,17 +702,17 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         # Simple email sending with proper permissions
         try:
             # Generate PDF
-            pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+            pdf_content = frappe.get_print("Quotation", quotation_name, "Standard", as_pdf=True)
             
             # Send email using frappe.sendmail with proper context
             frappe.sendmail(
                 recipients=[customer_email],
                 subject=subject,
                 message=message,
-                reference_doctype="Sales Order",
-                reference_name=sales_order_name,
+                reference_doctype="Quotation",
+                reference_name=quotation_name,
                 attachments=[{
-                    "fname": f"{sales_order_name}.pdf",
+                    "fname": f"{quotation_name}.pdf",
                     "fcontent": pdf_content
                 }]
             )
@@ -778,11 +722,11 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         
         return {
             "success": True,
-            "message": f"Sales Order PDF has been sent to {customer_email}"
+            "message": f"Quotation PDF has been sent to {customer_email}"
         }
         
     except Exception as e:
-        frappe.log_error(f"Error sending sales order email: {str(e)}", "Sales Order Form - Send Email")
+        frappe.log_error(f"Error sending quotation email: {str(e)}", "Quotation Form - Send Email")
         return {"success": False, "message": f"Error sending email: {str(e)}"}
 
 @frappe.whitelist()
@@ -993,7 +937,7 @@ def create_customer(customer_data):
         }
         
     except Exception as e:
-        frappe.log_error(f"Error creating customer: {str(e)}", "Sales Order Form - Create Customer")
+        frappe.log_error(f"Error creating customer: {str(e)}", "Quotation Form - Create Customer")
         return {"success": False, "message": f"Error creating customer: {str(e)}"}
 
 @frappe.whitelist()
@@ -1008,149 +952,39 @@ def get_cleaning_teams():
         )
         return {"success": True, "data": teams}
     except Exception as e:
-        frappe.log_error(f"Error fetching cleaning teams: {str(e)}", "Sales Order Form - Get Cleaning Teams")
+        frappe.log_error(f"Error fetching cleaning teams: {str(e)}", "Quotation Form - Get Cleaning Teams")
         return {"success": False, "message": str(e)}
     """
     return {"success": True, "data": []}
 
-@frappe.whitelist()
-def get_payment_modes():
-    """Get list of payment modes for the dropdown"""
-    try:
-        payment_modes = frappe.get_all(
-            "Mode of Payment",
-            fields=["name", "type"],
-            order_by="name asc"
-        )
-        return {"success": True, "data": payment_modes}
-    except Exception as e:
-        frappe.log_error(f"Error fetching payment modes: {str(e)}", "Sales Order Form - Get Payment Modes")
-        return {"success": False, "message": str(e)}
+
+
+
 
 @frappe.whitelist()
-def create_payment_entry(sales_order_name, mode_of_payment, payment_slip_file=None, payment_slip_filename=None):
-    """Create a payment entry for a sales order"""
+def download_quotation_pdf(quotation_name):
+    """Generate and return Quotation PDF in Standard format"""
     try:
-        if not sales_order_name:
-            return {"success": False, "message": "Sales Order name is required"}
+        if not quotation_name:
+            return {"success": False, "message": "Quotation name is required"}
         
-        if not mode_of_payment:
-            return {"success": False, "message": "Mode of Payment is required"}
-        
-        # Check if Sales Order exists
-        if not frappe.db.exists("Sales Order", sales_order_name):
-            return {"success": False, "message": "Sales Order not found"}
-        
-        # Get Sales Order document
-        sales_order = frappe.get_doc("Sales Order", sales_order_name)
-        
-        # Create new Payment Entry document
-        payment_entry = frappe.new_doc("Payment Entry")
-        
-        # Set basic fields
-        payment_entry.payment_type = "Receive"
-        payment_entry.party_type = "Customer"
-        payment_entry.party = sales_order.customer
-        payment_entry.party_name = sales_order.customer_name
-        payment_entry.company = sales_order.company
-        payment_entry.posting_date = nowdate()
-        payment_entry.mode_of_payment = mode_of_payment
-        
-        # Get default cash account from company
-        default_cash_account = frappe.get_value("Company", sales_order.company, "default_cash_account")
-        if default_cash_account:
-            payment_entry.paid_to = default_cash_account
-        else:
-            # Fallback to any cash account for the company
-            cash_accounts = frappe.get_all("Account", 
-                filters={"company": sales_order.company, "account_type": "Cash", "is_group": 0},
-                fields=["name"], limit=1)
-            if cash_accounts:
-                payment_entry.paid_to = cash_accounts[0].name
-        
-        # Set paid amount
-        payment_entry.paid_amount = sales_order.grand_total
-        payment_entry.received_amount = sales_order.grand_total
-        payment_entry.target_exchange_rate = 1
-        payment_entry.source_exchange_rate = 1
-        
-        # Add reference to Sales Order
-        payment_entry.append("references", {
-            "reference_doctype": "Sales Order",
-            "reference_name": sales_order_name,
-            "total_amount": sales_order.grand_total,
-            "outstanding_amount": sales_order.grand_total,
-            "allocated_amount": sales_order.grand_total
-        })
-        
-        # Handle file attachment if provided
-        if payment_slip_file and payment_slip_filename:
-            try:
-                # Save file to Frappe's file system
-                import base64
-                file_doc = frappe.get_doc({
-                    "doctype": "File",
-                    "file_name": payment_slip_filename,
-                    "content": base64.b64decode(payment_slip_file.split(',')[1] if ',' in payment_slip_file else payment_slip_file),
-                    "is_private": 1,
-                    "folder": "Home/Attachments"
-                })
-                file_doc.insert(ignore_permissions=True)
-                
-                # Set custom field with file URL if it exists
-                if hasattr(payment_entry, 'custom_payment_slip'):
-                    payment_entry.custom_payment_slip = file_doc.file_url
-                
-            except Exception as file_error:
-                frappe.log_error(f"Error uploading payment slip: {str(file_error)}", "Payment Entry - File Upload")
-                # Continue without failing the entire payment creation
-        
-        # Insert the document
-        payment_entry.insert(ignore_permissions=True)
-        
-        # Submit the payment entry
-        payment_entry.submit()
-        
-        return {
-            "success": True,
-            "message": f"Payment Entry {payment_entry.name} created successfully!",
-            "payment_entry_name": payment_entry.name,
-            "data": {
-                "name": payment_entry.name,
-                "paid_amount": payment_entry.paid_amount,
-                "mode_of_payment": payment_entry.mode_of_payment,
-                "posting_date": payment_entry.posting_date
-            }
-        }
-        
-    except Exception as e:
-        frappe.log_error(f"Error creating payment entry: {str(e)}", "Sales Order Form - Create Payment Entry")
-        return {"success": False, "message": f"Error creating payment entry: {str(e)}"}
-
-@frappe.whitelist()
-def download_sales_order_pdf(sales_order_name):
-    """Generate and return Sales Order PDF in SS Order format"""
-    try:
-        if not sales_order_name:
-            return {"success": False, "message": "Sales Order name is required"}
-        
-        # Check if Sales Order exists
-        if not frappe.db.exists("Sales Order", sales_order_name):
-            return {"success": False, "message": "Sales Order not found"}
+        # Check if Quotation exists
+        if not frappe.db.exists("Quotation", quotation_name):
+            return {"success": False, "message": "Quotation not found"}
         
         # Generate PDF
         import base64
-        pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+        pdf_content = frappe.get_print("Quotation", quotation_name, "Standard", as_pdf=True)
         pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
         
         return {
             "success": True,
             "pdf_content": pdf_base64,
-            "filename": f"{sales_order_name}.pdf"
+            "filename": f"{quotation_name}.pdf"
         }
         
     except Exception as e:
-        frappe.log_error(f"Error generating sales order PDF: {str(e)}", "Sales Order Form - Download PDF")
+        frappe.log_error(f"Error generating sales order PDF: {str(e)}", "Quotation Form - Download PDF")
         return {"success": False, "message": f"Error generating PDF: {str(e)}"}
 
 @frappe.whitelist()
@@ -1164,7 +998,7 @@ def get_cleaning_teams_list():
         )
         return {"success": True, "data": teams}
     except Exception as e:
-        frappe.log_error(f"Error fetching cleaning teams list: {str(e)}", "Sales Order Form - Get Teams")
+        frappe.log_error(f"Error fetching cleaning teams list: {str(e)}", "Quotation Form - Get Teams")
         return {"success": False, "message": str(e)}
 
 @frappe.whitelist()
@@ -1221,5 +1055,5 @@ def get_team_availability(team_name, date=None):
         }
         
     except Exception as e:
-        frappe.log_error(f"Error fetching team availability: {str(e)}", "Sales Order Form - Get Team Availability")
+        frappe.log_error(f"Error fetching team availability: {str(e)}", "Quotation Form - Get Team Availability")
         return {"success": False, "message": str(e)}

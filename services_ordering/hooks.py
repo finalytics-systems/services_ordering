@@ -46,7 +46,11 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+    "Sales Order": [
+        "public/js/sale_order.js"
+    ]
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -257,7 +261,7 @@ fixtures = [
         "dt": "Print Format",
         "filters": [
             [
-                "name", "in", ["SS Order", "SS DN"]
+                "name", "in", ["SS Order", "SS DN", "Everclean SS"]
             ]
         ]
     }

@@ -1,7 +1,7 @@
-frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
+frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: 'Sales Order Portal',
+		title: 'Quotation Portal',
 		single_column: true
 	});
 
@@ -51,7 +51,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 			}
 			
 			/* CSS override for full width */
-			#sales-order-app {
+			#quotation-app {
 				width: 100% !important;
 				min-height: 100vh !important;
 			}
@@ -137,12 +137,12 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 		<div class="loading-container" id="loadingScreen">
 			<div class="text-center">
 				<div class="loading-spinner"></div>
-				<div class="loading-text">Loading Sales Order Form...</div>
+				<div class="loading-text">Loading Quotation Form...</div>
 			</div>
 		</div>
 
 		<!-- Main Content Container -->
-		<div id="sales-order-app"></div>
+		<div id="quotation-app"></div>
 	`);
 
 	// Load external dependencies
@@ -150,10 +150,10 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 		'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css',
 		'https://unpkg.com/vue@3/dist/vue.global.js'
 	], function() {
-		initializeSalesOrderApp();
+		initializeQuotationApp();
 	});
 
-	function initializeSalesOrderApp() {
+	function initializeQuotationApp() {
 		// Hide loading screen
 		setTimeout(function() {
 			$('#loadingScreen').css('opacity', '0');
@@ -186,26 +186,32 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 					console.log('Vue setup function called');
 					
 					// Form data
-				const salesOrder = ref({
-					customer: '',
-					customer_name: '',
-					transaction_date: new Date().toISOString().split('T')[0],
-					delivery_date: '',
-					customTime: '',
-					payment_mode: '',
-					currency: 'SAR',
-					selling_price_list: 'البيع القياسية',
-					company: '',
-					priority: 'Medium',
-					order_type: 'Sales',
-					tc_name: 'Everclean Sales Order'
-				});
+					// Calculate default valid_till date (today + 15 days)
+					const getDefaultValidTill = () => {
+						const today = new Date();
+						const validTill = new Date(today);
+						validTill.setDate(today.getDate() + 15);
+						return validTill.toISOString().split('T')[0];
+					};
+
+					const quotation = ref({
+						customer: '',
+						customer_name: '',
+						transaction_date: new Date().toISOString().split('T')[0],
+						valid_till: getDefaultValidTill(),
+						payment_mode: '',
+						currency: 'SAR',
+						selling_price_list: 'البيع القياسية',
+						company: '',
+						priority: 'Medium',
+						quotation_to: ''
+					});
 
 					const items = ref([]);
 					const loading = ref(false);
 					const saving = ref(false);
 					const sendingEmail = ref(false);
-					const lastCreatedSalesOrder = ref(null);
+					const lastCreatedQuotation = ref(null);
 					const showSuccessMessage = ref(false);
 					const successMessage = ref('');
 					const isErrorMessage = ref(false);
@@ -218,7 +224,6 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 					const cleaningTeams = ref([]);
 					const cities = ref([]);
 					const neighborhoods = ref([]);
-					const paymentModes = ref([]);
 					
 					// Dropdown states
 					const showCustomerDropdown = ref(false);
@@ -246,16 +251,6 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						neighborhood: '',
 						city: '',
 						country: 'Saudi Arabia'
-					});
-					
-					// Payment creation popup
-					const showCreatePaymentPopup = ref(false);
-					const creatingPayment = ref(false);
-					const downloadingPDF = ref(false);
-					const newPayment = ref({
-						mode_of_payment: '',
-						payment_slip_file: null,
-						payment_slip_filename: ''
 					});
 					
 					// Team availability viewer
@@ -388,7 +383,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 					
 					// Select customer
 					const selectCustomer = async (customer) => {
-						salesOrder.value.customer = customer.name;
+						quotation.value.customer = customer.name;
 						showCustomerDropdown.value = false;
 						customerSearchTerm.value = '';
 						await onCustomerChange();
@@ -559,7 +554,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							console.log('Creating new customer:', newCustomer.value);
 							
 							const response = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.create_customer",
+								method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.create_customer",
 								args: {
 									customer_data: newCustomer.value
 								}
@@ -579,8 +574,8 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 								});
 								
 								// Set the newly created customer as selected
-								salesOrder.value.customer = customerData.name;
-								salesOrder.value.customer_name = customerData.customer_name;
+								quotation.value.customer = customerData.name;
+								quotation.value.customer_name = customerData.customer_name;
 								
 								// Show success message
 								showMessage(`Customer "${customerData.customer_name}" created successfully!`, false);
@@ -602,98 +597,21 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						}
 					};
 					
-					// Payment creation functions
-					const openCreatePaymentPopup = () => {
-						if (!lastCreatedSalesOrder.value) {
-							showMessage('Please create a sales order first', true);
-							return;
-						}
-						showCreatePaymentPopup.value = true;
-					};
-					
-					const closeCreatePaymentPopup = () => {
-						showCreatePaymentPopup.value = false;
-						resetNewPaymentForm();
-					};
-					
-					const resetNewPaymentForm = () => {
-						newPayment.value = {
-							mode_of_payment: '',
-							payment_slip_file: null,
-							payment_slip_filename: ''
-						};
-					};
-					
-					const handlePaymentFileUpload = (event) => {
-						const file = event.target.files[0];
-						if (file) {
-							newPayment.value.payment_slip_filename = file.name;
-							
-							// Convert file to base64
-							const reader = new FileReader();
-							reader.onload = (e) => {
-								newPayment.value.payment_slip_file = e.target.result;
-							};
-							reader.readAsDataURL(file);
-						}
-					};
-					
-					const createPaymentEntry = async () => {
-						try {
-							creatingPayment.value = true;
-							
-							if (!newPayment.value.mode_of_payment) {
-								showMessage('Mode of Payment is required', true);
-								return;
-							}
-							
-							if (!lastCreatedSalesOrder.value) {
-								showMessage('No Sales Order found', true);
-								return;
-							}
-							
-							console.log('Creating payment entry:', newPayment.value);
-							
-							const response = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.create_payment_entry",
-								args: {
-									sales_order_name: lastCreatedSalesOrder.value.sales_order_name,
-									mode_of_payment: newPayment.value.mode_of_payment,
-									payment_slip_file: newPayment.value.payment_slip_file,
-									payment_slip_filename: newPayment.value.payment_slip_filename
-								}
-							});
-							
-							if (response && response.message && response.message.success) {
-								showMessage(`Payment Entry ${response.message.payment_entry_name} created successfully!`, false);
-								closeCreatePaymentPopup();
-							} else {
-								showMessage('Error creating payment entry: ' + (response?.message?.message || 'Unknown error'), true);
-							}
-							
-						} catch (error) {
-							console.error('Error creating payment entry:', error);
-							showMessage('Error creating payment entry: ' + error.message, true);
-						} finally {
-							creatingPayment.value = false;
-						}
-					};
-					
-					const downloadSalesOrderPDF = async () => {
+					const downloadQuotationPDF = async () => {
 						try {
 							downloadingPDF.value = true;
 							
-							if (!lastCreatedSalesOrder.value) {
-								showMessage('No Sales Order to download', true);
+							if (!lastCreatedQuotation.value) {
+								showMessage('No Quotation to download', true);
 								return;
 							}
 							
-							console.log('Downloading PDF for:', lastCreatedSalesOrder.value.sales_order_name);
+							console.log('Downloading PDF for:', lastCreatedQuotation.value.quotation_name);
 							
 							const response = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.download_sales_order_pdf",
+								method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.download_quotation_pdf",
 								args: {
-									sales_order_name: lastCreatedSalesOrder.value.sales_order_name
+									quotation_name: lastCreatedQuotation.value.quotation_name
 								}
 							});
 							
@@ -736,7 +654,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						// Fetch teams list and availability for all teams
 						try {
 							const response = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.get_cleaning_teams_list"
+								method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.get_cleaning_teams_list"
 							});
 							if (response && response.message && response.message.success) {
 								availableTeamsList.value = response.message.data || [];
@@ -771,7 +689,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							for (const team of availableTeamsList.value) {
 								try {
 									const response = await frappe.call({
-										method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.get_team_availability",
+										method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.get_team_availability",
 										args: {
 											team_name: team.name,
 											date: selectedDateForViewing.value
@@ -829,7 +747,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						try {
 							loadingTeamAvailability.value = true;
 							const response = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.get_team_availability",
+								method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.get_team_availability",
 								args: {
 									team_name: selectedTeamForViewing.value,
 									date: selectedDateForViewing.value
@@ -901,10 +819,10 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 					const testBackendConnection = async () => {
 						try {
 							console.log('Testing backend connection...');
-							console.log('Calling method: services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.test_connection');
+							console.log('Calling method: services_ordering.services_ordering.page.quotation_portal.quotation_portal.test_connection');
 							
 							const testResponse = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.test_connection"
+								method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.test_connection"
 							});
 							
 							console.log('Backend test response:', testResponse);
@@ -946,7 +864,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							}
 							
 							const response = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.get_master_data",
+								method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.get_master_data",
 								callback: function(r) {
 									console.log('Frappe call response:', r);
 								}
@@ -972,19 +890,6 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 									items: itemsList.value.length,
 									neighborhoods: neighborhoods.value.length
 								});
-								
-								// Fetch payment modes separately
-								try {
-									const paymentModesResponse = await frappe.call({
-										method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.get_payment_modes"
-									});
-									if (paymentModesResponse && paymentModesResponse.message && paymentModesResponse.message.success) {
-										paymentModes.value = paymentModesResponse.message.data || [];
-										console.log('Payment modes loaded:', paymentModes.value.length);
-									}
-								} catch (error) {
-									console.error('Error loading payment modes:', error);
-								}
 							} else {
 								console.error('Failed to fetch master data:', response);
 								successMessage.value = 'Failed to load master data: ' + (response?.message?.message || 'Unknown error');
@@ -1004,11 +909,11 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 					};
 
 					// Save Sales Order
-					const saveSalesOrder = async () => {
+					const saveQuotation = async () => {
 						try {
 							saving.value = true;
 							
-							if (!salesOrder.value.customer) {
+							if (!quotation.value.customer) {
 								showMessage('Please select a customer', true);
 								return;
 							}
@@ -1018,28 +923,27 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 								return;
 							}
 
-					// Prepare sales order data
-					const salesOrderData = {
-						...salesOrder.value,
-						items: items.value,
-						custom_time: salesOrder.value.customTime,
-						custom_payment_mode: salesOrder.value.payment_mode
-					};
+							// Prepare quotation data
+							const quotationData = {
+								...quotation.value,
+								items: items.value,
+								custom_payment_mode: quotation.value.payment_mode
+							};
 
-							console.log('Creating sales order:', salesOrderData);
+							console.log('Creating quotation:', quotationData);
 
 							const response = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.create_sales_order",
+								method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.create_quotation",
 								args: {
-									sales_order_data: salesOrderData
+									quotation_data: quotationData
 								}
 							});
 
 							if (response.message && response.message.success) {
-								lastCreatedSalesOrder.value = response.message;
+								lastCreatedQuotation.value = response.message;
 								
 								// Show custom success message
-								let successDetails = `Sales Order ${response.message.sales_order_name} created successfully!`;
+								let successDetails = `Sales Order ${response.message.quotation_name} created successfully!`;
 								if (response.message.data?.custom_time) {
 									// Format time in 24-hour format
 									successDetails += ` Time: ${response.message.data.custom_time}`;
@@ -1060,7 +964,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 								// Don't reset form - let user decide when to reset
 							} else {
 								// Show custom error message
-								successMessage.value = 'Error creating sales order: ' + (response.message?.message || 'Unknown error');
+								successMessage.value = 'Error Creating quotation: ' + (response.message?.message || 'Unknown error');
 								isErrorMessage.value = true;
 								showSuccessMessage.value = true;
 								
@@ -1074,7 +978,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							console.error('Error saving sales order:', error);
 							
 							// Show custom error message
-							successMessage.value = 'Error creating sales order: ' + error.message;
+							successMessage.value = 'Error Creating quotation: ' + error.message;
 							isErrorMessage.value = true;
 							showSuccessMessage.value = true;
 							
@@ -1093,22 +997,20 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							return; // If user clicks Cancel, do nothing
 						}
 						
-						salesOrder.value = {
+						quotation.value = {
 							customer: '',
 							customer_name: '',
 							transaction_date: new Date().toISOString().split('T')[0],
-							delivery_date: '',
-							customTime: '',
+							valid_till: getDefaultValidTill(),
 							payment_mode: '',
 							currency: 'SAR',
 							selling_price_list: 'البيع القياسية',
 							company: '',
 							priority: 'Medium',
-							order_type: 'Sales',
-							tc_name: 'Everclean Sales Order'
+							quotation_to: ''
 						};
 						items.value = [];
-						lastCreatedSalesOrder.value = null;
+						lastCreatedQuotation.value = null;
 						showSuccessMessage.value = false;
 					};
 
@@ -1117,14 +1019,14 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						try {
 							sendingEmail.value = true;
 							
-							if (!lastCreatedSalesOrder.value) {
-								successMessage.value = 'No Sales Order to send. Please create a Sales Order first.';
+							if (!lastCreatedQuotation.value) {
+								successMessage.value = 'No Quotation to send. Please create a quotation first.';
 								showSuccessMessage.value = true;
 								setTimeout(() => { showSuccessMessage.value = false; }, 5000);
 								return;
 							}
 
-							if (!salesOrder.value.customer) {
+							if (!quotation.value.customer) {
 								successMessage.value = 'Customer information is missing.';
 								showSuccessMessage.value = true;
 								setTimeout(() => { showSuccessMessage.value = false; }, 5000);
@@ -1133,10 +1035,10 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 
 							// Send email with PDF attachment using our improved method
 							const emailResponse = await frappe.call({
-								method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.send_sales_order_email",
+								method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.send_quotation_email",
 								args: {
-									sales_order_name: lastCreatedSalesOrder.value.sales_order_name,
-									customer_name: salesOrder.value.customer
+									quotation_name: lastCreatedQuotation.value.quotation_name,
+									customer_name: quotation.value.customer
 								}
 							});
 
@@ -1162,36 +1064,36 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 
 					// Handle customer selection
 					const onCustomerChange = async () => {
-						const selectedCustomer = customers.value.find(c => c.name === salesOrder.value.customer);
+						const selectedCustomer = customers.value.find(c => c.name === quotation.value.customer);
 						if (selectedCustomer) {
-							salesOrder.value.customer_name = selectedCustomer.customer_name;
-							salesOrder.value.customer_group = selectedCustomer.customer_group;
-							salesOrder.value.territory = selectedCustomer.territory;
+							quotation.value.customer_name = selectedCustomer.customer_name;
+							quotation.value.customer_group = selectedCustomer.customer_group;
+							quotation.value.territory = selectedCustomer.territory;
 							
 							// Fetch detailed customer info from backend
 							try {
 								const response = await frappe.call({
-									method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.get_customer_details",
+									method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.get_customer_details",
 									args: {
-										customer: salesOrder.value.customer
+										customer: quotation.value.customer
 									}
 								});
 								
 								if (response.message && response.message.success) {
 									const customerDetails = response.message.data;
-									salesOrder.value.currency = customerDetails.default_currency || salesOrder.value.currency;
-									salesOrder.value.selling_price_list = customerDetails.default_price_list || salesOrder.value.selling_price_list;
-									salesOrder.value.payment_terms_template = customerDetails.payment_terms;
+									quotation.value.currency = customerDetails.default_currency || quotation.value.currency;
+									quotation.value.selling_price_list = customerDetails.default_price_list || quotation.value.selling_price_list;
+									quotation.value.payment_terms_template = customerDetails.payment_terms;
 									
 									// Set address and contact if available
 									if (customerDetails.default_address) {
-										salesOrder.value.customer_address = customerDetails.default_address.name;
+										quotation.value.customer_address = customerDetails.default_address.name;
 									}
 									if (customerDetails.default_contact) {
-										salesOrder.value.contact_person = customerDetails.default_contact.name;
-										salesOrder.value.contact_display = `${customerDetails.default_contact.first_name} ${customerDetails.default_contact.last_name}`;
-										salesOrder.value.contact_mobile = customerDetails.default_contact.mobile_no;
-										salesOrder.value.contact_email = customerDetails.default_contact.email_id;
+										quotation.value.contact_person = customerDetails.default_contact.name;
+										quotation.value.contact_display = `${customerDetails.default_contact.first_name} ${customerDetails.default_contact.last_name}`;
+										quotation.value.contact_mobile = customerDetails.default_contact.mobile_no;
+										quotation.value.contact_email = customerDetails.default_contact.email_id;
 									}
 								}
 							} catch (error) {
@@ -1213,12 +1115,12 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 							// Optionally fetch detailed item info from backend
 							try {
 								const response = await frappe.call({
-									method: "services_ordering.services_ordering.page.sales_order_portal.sales_order_portal.get_item_details",
+									method: "services_ordering.services_ordering.page.quotation_portal.quotation_portal.get_item_details",
 									args: {
 										item_code: item.item_code,
-										customer: salesOrder.value.customer,
-										company: salesOrder.value.company,
-										price_list: salesOrder.value.selling_price_list
+										customer: quotation.value.customer,
+										company: quotation.value.company,
+										price_list: quotation.value.selling_price_list
 									}
 								});
 								
@@ -1242,8 +1144,8 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						// Add beforeunload event to show confirmation before page refresh
 						window.addEventListener('beforeunload', (event) => {
 							// Check if there's any data in the form that would be lost
-							if (salesOrder.value.customer || items.value.length > 1 || 
-								items.value[0]?.item_code || salesOrder.value.time || salesOrder.value.team) {
+							if (quotation.value.customer || items.value.length > 1 || 
+								items.value[0]?.item_code || quotation.value.time || quotation.value.team) {
 								// Cancel the event
 								event.preventDefault();
 								// Chrome requires returnValue to be set
@@ -1254,12 +1156,12 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 					});
 
 					return {
-						salesOrder,
+						quotation,
 						items,
 						loading,
 						saving,
 						sendingEmail,
-						lastCreatedSalesOrder,
+						lastCreatedQuotation,
 						showSuccessMessage,
 						successMessage,
 						isErrorMessage,
@@ -1271,14 +1173,13 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						cleaningTeams,
 						cities,
 						neighborhoods,
-						paymentModes,
 						totalAmount,
 						vatAmount,
 						grandTotal,
 						addItem,
 						removeItem,
 						calculateItemAmount,
-						saveSalesOrder,
+						saveQuotation,
 						resetForm,
 						sendEmail,
 						onCustomerChange,
@@ -1320,16 +1221,7 @@ frappe.pages['sales-order-portal'].on_page_load = function(wrapper) {
 						// Mobile number validation
 						validateMobileNumber,
 						formatMobileNumber,
-						// Payment creation modal
-						showCreatePaymentPopup,
-						creatingPayment,
-						downloadingPDF,
-						newPayment,
-						openCreatePaymentPopup,
-						closeCreatePaymentPopup,
-						createPaymentEntry,
-						handlePaymentFileUpload,
-						downloadSalesOrderPDF,
+						downloadQuotationPDF,
 						// Team availability viewer
 						showTeamAvailabilityPopup,
 						loadingTeamAvailability,
@@ -1430,7 +1322,7 @@ class="border-2 border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:bor
 </svg>
 </div>
 <span class="text-gray-700 font-medium">
-{{ salesOrder.customer ? (customers.find(c => c.name === salesOrder.customer)?.customer_name || salesOrder.customer) : 'Select customer...' }}
+{{ quotation.customer ? (customers.find(c => c.name === quotation.customer)?.customer_name || quotation.customer) : 'Select customer...' }}
 </span>
 </div>
 <svg class="w-6 h-6 text-gray-400 transition-transform duration-200" :class="showCustomerDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1511,73 +1403,25 @@ Create New Customer
 </div>
 
 <div>
-<label class="block text-sm font-medium text-gray-700 mb-2">Expected Service Date</label>
+<label class="block text-sm font-medium text-gray-700 mb-2">Valid Till</label>
 <input 
 type="date"
-v-model="salesOrder.delivery_date"
+v-model="quotation.valid_till"
 class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
 >
 </div>
 
-			<div>
-			<label class="block text-sm font-medium text-gray-700 mb-2">Expected Service Time (24h format)</label>
-			<select
-			v-model="salesOrder.customTime"
-			class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-			>
-			<option value="">Select time...</option>
-			<option value="00:00">00:00</option>
-			<option value="01:00">01:00</option>
-			<option value="02:00">02:00</option>
-			<option value="03:00">03:00</option>
-			<option value="04:00">04:00</option>
-			<option value="05:00">05:00</option>
-			<option value="06:00">06:00</option>
-			<option value="07:00">07:00</option>
-			<option value="08:00">08:00</option>
-			<option value="09:00">09:00</option>
-			<option value="10:00">10:00</option>
-			<option value="11:00">11:00</option>
-			<option value="12:00">12:00</option>
-			<option value="13:00">13:00</option>
-			<option value="14:00">14:00</option>
-			<option value="15:00">15:00</option>
-			<option value="16:00">16:00</option>
-			<option value="17:00">17:00</option>
-			<option value="18:00">18:00</option>
-			<option value="19:00">19:00</option>
-			<option value="20:00">20:00</option>
-			<option value="21:00">21:00</option>
-			<option value="22:00">22:00</option>
-			<option value="23:00">23:00</option>
-			</select>
-			<span class="text-xs text-gray-500 mt-1 block">Time shown in 24-hour format with AM/PM reference</span>
-			</div>
-
-			<div>
-			<label class="block text-sm font-medium text-gray-700 mb-2">Payment Mode *</label>
-			<select
-			v-model="salesOrder.payment_mode"
-			class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-			>
-			<option value="">Select payment mode...</option>
-			<option value="POS">POS</option>
-			<option value="Bank">Bank</option>
-			</select>
-			</div>
-
-			<div>
-			<label class="block text-sm font-medium text-gray-700 mb-2">Team Availability</label>
-			<button 
-			@click="openTeamAvailabilityPopup"
-			class="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 flex items-center justify-center font-medium"
-			>
-			<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-			</svg>
-			Check Team Schedule
-			</button>
-			</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 mb-2">Payment Mode *</label>
+<select
+v-model="quotation.payment_mode"
+class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+>
+<option value="">Select payment mode...</option>
+<option value="POS">POS</option>
+<option value="Bank">Bank</option>
+</select>
+</div>
 
 <!-- Time dropdown temporarily disabled
 <div>
@@ -1812,8 +1656,8 @@ Reset Form
 
 <!-- Download PDF Button - Only show after successful Sales Order creation -->
 <button 
-v-if="lastCreatedSalesOrder"
-@click="downloadSalesOrderPDF"
+v-if="lastCreatedQuotation"
+@click="downloadQuotationPDF"
 :disabled="downloadingPDF"
 class="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium text-base"
 >
@@ -1824,21 +1668,9 @@ class="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blu
 {{ downloadingPDF ? 'Downloading...' : 'Download PDF' }}
 </button>
 
-<!-- Create Payment Button - Only show after successful Sales Order creation -->
-<button 
-v-if="lastCreatedSalesOrder"
-@click="openCreatePaymentPopup"
-class="w-full sm:w-auto px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 flex items-center justify-center font-medium text-base"
->
-<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-</svg>
-Create Payment
-</button>
-
 <!-- Send Email Button - Only show after successful Sales Order creation -->
 <button 
-v-if="lastCreatedSalesOrder"
+v-if="lastCreatedQuotation"
 @click="sendEmail"
 :disabled="sendingEmail"
 class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium text-base"
@@ -1851,7 +1683,7 @@ class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-gr
 </button>
 
 <button 
-@click="saveSalesOrder"
+@click="saveQuotation"
 :disabled="saving"
 class="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold text-base shadow-md hover:shadow-lg"
 >
@@ -1859,7 +1691,7 @@ class="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-gr
 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 </svg>
 <div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-{{ saving ? 'Creating Order...' : 'Create Order' }}
+{{ saving ? 'Creating Order...' : 'Create Quotation' }}
 </button>
 </div>
 </div>
@@ -2170,341 +2002,10 @@ class="w-full sm:w-auto px-8 py-2.5 bg-green-600 text-white rounded-lg hover:bg-
 </div>
 </div>
 
-<!-- Create Payment Popup Modal -->
-<div v-if="showCreatePaymentPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-<div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-<div class="p-4 sm:p-6">
-<!-- Modal Header -->
-<div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-<div class="flex items-center">
-<div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-3">
-<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-</svg>
-</div>
-<h2 class="text-xl sm:text-2xl font-semibold text-gray-800">Create Payment Entry</h2>
-</div>
-<button @click="closeCreatePaymentPopup" class="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors">
-<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-</svg>
-</button>
-</div>
-
-<!-- Payment Info -->
-<div v-if="lastCreatedSalesOrder" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-6">
-<h3 class="text-lg font-semibold text-gray-800 mb-2">Sales Order Details</h3>
-<p class="text-sm text-gray-600"><strong>Order:</strong> {{ lastCreatedSalesOrder.sales_order_name }}</p>
-<p class="text-sm text-gray-600"><strong>Customer:</strong> {{ salesOrder.customer_name || salesOrder.customer }}</p>
-<p class="text-sm text-gray-600"><strong>Amount:</strong> SAR {{ lastCreatedSalesOrder.data?.grand_total?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00' }}</p>
-</div>
-
-<!-- Payment Form -->
-<div class="space-y-6">
-<div>
-<label class="block text-sm font-medium text-gray-700 mb-2">Mode of Payment *</label>
-<select 
-v-model="newPayment.mode_of_payment"
-class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
-required
->
-<option value="">Select Mode of Payment</option>
-<option v-for="mode in paymentModes" :key="mode.name" :value="mode.name">
-{{ mode.name }}
-</option>
-</select>
-</div>
-
-<div>
-<label class="block text-sm font-medium text-gray-700 mb-2">Payment Slip / Receipt</label>
-<div class="relative">
-<input 
-type="file"
-@change="handlePaymentFileUpload"
-accept="image/*,application/pdf"
-class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
->
-</div>
-<p v-if="newPayment.payment_slip_filename" class="mt-2 text-sm text-gray-600">
-Selected: {{ newPayment.payment_slip_filename }}
-</p>
-<p class="mt-2 text-xs text-gray-500">Upload payment receipt or slip (optional)</p>
-</div>
-</div>
-
-<!-- Modal Footer -->
-<div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-<button 
-@click="closeCreatePaymentPopup"
-class="w-full sm:w-auto px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium"
->
-Cancel
-</button>
-<button 
-@click="createPaymentEntry"
-:disabled="creatingPayment || !newPayment.mode_of_payment"
-class="w-full sm:w-auto px-8 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium"
->
-<svg v-if="!creatingPayment" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-</svg>
-<div v-else class="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-{{ creatingPayment ? 'Creating...' : 'Create Payment Entry' }}
-</button>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Team Availability Viewer Popup Modal -->
-<div v-if="showTeamAvailabilityPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4" style="overflow-y: auto;">
-<div class="bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[98vh] overflow-y-auto my-2">
-<div class="p-4 sm:p-6">
-<!-- Modal Header -->
-<div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-<div class="flex items-center">
-<div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-</svg>
-</div>
-<div>
-<h2 class="text-xl sm:text-2xl font-semibold text-gray-800">Team Availability Viewer</h2>
-<p class="text-sm text-gray-500">View team schedules and availability</p>
-</div>
-</div>
-<button @click="closeTeamAvailabilityPopup" class="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors">
-<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-</svg>
-</button>
-</div>
-
-<!-- Team and Date Selection -->
-<div class="bg-gray-50 rounded-lg p-4 mb-6">
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 mb-2">Select Team (Optional)</label>
-<select 
-v-model="selectedTeamForViewing"
-@change="onTeamSelectionChange"
-class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
->
-<option value="">View all teams...</option>
-<option v-for="team in availableTeamsList" :key="team.name" :value="team.name">
-{{ team.name1 || team.name }}
-</option>
-</select>
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 mb-2">Select Date *</label>
-<input 
-type="date"
-v-model="selectedDateForViewing"
-@change="fetchAllTeamsAvailability"
-class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
->
-</div>
-</div>
-</div>
-
-<!-- Loading State -->
-<div v-if="loadingTeamAvailability" class="text-center py-12">
-<div class="inline-block w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-<p class="mt-4 text-gray-600">Loading team schedule...</p>
-</div>
-
-<!-- All Teams Availability Display with Tabs -->
-<div v-else-if="teamAvailabilityData && teamAvailabilityData.length > 0 && !selectedTeamForViewing">
-<!-- Team Tabs -->
-<div class="border-b border-gray-200 mb-6">
-<nav class="-mb-px flex space-x-8 overflow-x-auto">
-<button 
-v-for="(teamData, index) in teamAvailabilityData" 
-:key="teamData.team_name"
-@click="activeTeamTab = index"
-class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
-:class="{
-'border-blue-500 text-blue-600': activeTeamTab === index,
-'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTeamTab !== index
-}"
->
-<div class="flex items-center">
-<div class="w-6 h-6 rounded-full mr-2 flex items-center justify-center text-xs font-bold"
-:class="{
-'bg-blue-100 text-blue-600': activeTeamTab === index,
-'bg-gray-100 text-gray-500': activeTeamTab !== index
-}"
->
-{{ index + 1 }}
-</div>
-{{ teamData.team_display_name }}
-</div>
-</button>
-</nav>
-</div>
-
-<!-- Active Team Content -->
-<div v-if="teamAvailabilityData[activeTeamTab]" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-<!-- Team Header -->
-<div class="bg-gray-50 border-b border-gray-200 p-4">
-<h3 class="font-semibold text-lg text-gray-800">{{ teamAvailabilityData[activeTeamTab].team_display_name }}</h3>
-<p class="text-sm text-gray-600">{{ new Date(selectedDateForViewing).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) }}</p>
-</div>
-
-<!-- Time Slots Grid -->
-<div class="p-4 max-h-96 overflow-y-auto">
-<!-- Error State -->
-<div v-if="teamAvailabilityData[activeTeamTab].error" class="text-center py-8 text-red-500">
-<svg class="w-16 h-16 text-red-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-</svg>
-<p class="font-medium">Error loading team data</p>
-<p class="text-sm">Unable to fetch availability for this team</p>
-</div>
-
-<!-- No Shifts -->
-<div v-else-if="!teamAvailabilityData[activeTeamTab].shifts || teamAvailabilityData[activeTeamTab].shifts.length === 0" class="text-center py-8 text-gray-500">
-<svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-</svg>
-<p class="font-medium">No shifts configured</p>
-<p class="text-sm">This team has no working hours set up</p>
-</div>
-
-<!-- Time Slots -->
-<div v-else class="space-y-2">
-<div v-for="hour in getTimeSlots()" :key="hour" 
-v-show="isInWorkingShift(hour, teamAvailabilityData[activeTeamTab])"
-class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200"
-:class="{
-'bg-green-50 border-green-300': !isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]),
-'bg-red-50 border-red-300': isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab])
-}"
->
-<!-- Time Display -->
-<div class="w-24 font-mono font-semibold text-gray-700">
-{{ formatHour(hour) }}
-</div>
-
-<!-- Status Indicator -->
-<div class="flex-1 flex items-center gap-3">
-<!-- Visual Bar -->
-<div class="flex-1 h-10 rounded-lg flex items-center px-4"
-:class="{
-'bg-green-500': !isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]),
-'bg-red-500': isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab])
-}"
->
-<span class="text-white text-sm font-semibold">
-{{ isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]) ? '🔴 BOOKED' : '✅ AVAILABLE' }}
-</span>
-</div>
-
-<!-- Status Badge -->
-<div class="text-sm font-bold px-4 py-2 rounded-lg"
-:class="{
-'bg-green-100 text-green-700': !isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]),
-'bg-red-100 text-red-700': isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab])
-}"
->
-{{ isTimeSlotBooked(hour, teamAvailabilityData[activeTeamTab]) ? 'BUSY' : 'FREE' }}
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Single Team Availability Display -->
-<div v-else-if="selectedTeamForViewing && teamAvailabilityData && typeof teamAvailabilityData === 'object' && !Array.isArray(teamAvailabilityData)">
-<div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-<!-- Team Header -->
-<div class="bg-gray-50 border-b border-gray-200 p-4">
-<h3 class="font-semibold text-lg text-gray-800">{{ teamAvailabilityData.team_name }}</h3>
-<p class="text-sm text-gray-600">{{ new Date(selectedDateForViewing).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) }}</p>
-</div>
-
-<!-- Time Slots Grid -->
-<div class="p-4 max-h-96 overflow-y-auto">
-<div v-if="!teamAvailabilityData.shifts || teamAvailabilityData.shifts.length === 0" class="text-center py-8 text-gray-500">
-<svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-</svg>
-<p class="font-medium">No shifts configured</p>
-<p class="text-sm">This team has no working hours set up</p>
-</div>
-
-<div v-else class="space-y-2">
-<div v-for="hour in getTimeSlots()" :key="hour" 
-v-show="isInWorkingShift(hour, teamAvailabilityData)"
-class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200"
-:class="{
-'bg-green-50 border-green-300': !isTimeSlotBooked(hour, teamAvailabilityData),
-'bg-red-50 border-red-300': isTimeSlotBooked(hour, teamAvailabilityData)
-}"
->
-<!-- Time Display -->
-<div class="w-24 font-mono font-semibold text-gray-700">
-{{ formatHour(hour) }}
-</div>
-
-<!-- Status Indicator -->
-<div class="flex-1 flex items-center gap-3">
-<!-- Visual Bar -->
-<div class="flex-1 h-10 rounded-lg flex items-center px-4"
-:class="{
-'bg-green-500': !isTimeSlotBooked(hour, teamAvailabilityData),
-'bg-red-500': isTimeSlotBooked(hour, teamAvailabilityData)
-}"
->
-<span class="text-white text-sm font-semibold">
-{{ isTimeSlotBooked(hour, teamAvailabilityData) ? '🔴 BOOKED' : '✅ AVAILABLE' }}
-</span>
-</div>
-
-<!-- Status Badge -->
-<div class="text-sm font-bold px-4 py-2 rounded-lg"
-:class="{
-'bg-green-100 text-green-700': !isTimeSlotBooked(hour, teamAvailabilityData),
-'bg-red-100 text-red-700': isTimeSlotBooked(hour, teamAvailabilityData)
-}"
->
-{{ isTimeSlotBooked(hour, teamAvailabilityData) ? 'BUSY' : 'FREE' }}
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-<!-- No Teams Available State -->
-<div v-else class="text-center py-12">
-<svg class="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-</svg>
-<p class="text-lg font-medium text-gray-700 mb-2">No Teams Available</p>
-<p class="text-sm text-gray-500">Select a date to view team availability</p>
-</div>
-
-<!-- Modal Footer -->
-<div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
-<button 
-@click="closeTeamAvailabilityPopup"
-class="px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium"
->
-Close
-</button>
-</div>
-</div>
-</div>
-</div>
 `
 			});
 
-			app.mount("#sales-order-app");
+			app.mount("#quotation-app");
 			console.log('Vue app mounted successfully');
 		} catch (error) {
 			console.error('Error creating Vue app:', error);
