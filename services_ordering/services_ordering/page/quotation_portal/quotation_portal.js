@@ -194,18 +194,19 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 						return validTill.toISOString().split('T')[0];
 					};
 
-					const quotation = ref({
-						customer: '',
-						customer_name: '',
-						transaction_date: new Date().toISOString().split('T')[0],
-						valid_till: getDefaultValidTill(),
-						payment_mode: '',
-						currency: 'SAR',
-						selling_price_list: 'البيع القياسية',
-						company: '',
-						priority: 'Medium',
-						quotation_to: ''
-					});
+				const quotation = ref({
+					customer: '',
+					customer_name: '',
+					transaction_date: new Date().toISOString().split('T')[0],
+					valid_till: getDefaultValidTill(),
+					payment_mode: '',
+					currency: 'SAR',
+					selling_price_list: 'البيع القياسية',
+					company: '',
+					priority: 'Medium',
+					quotation_to: '',
+					tc_name: 'Everclean Sales Order'
+				});
 
 					const items = ref([]);
 					const loading = ref(false);
@@ -1007,7 +1008,8 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 							selling_price_list: 'البيع القياسية',
 							company: '',
 							priority: 'Medium',
-							quotation_to: ''
+							quotation_to: '',
+							tc_name: 'Everclean Sales Order'
 						};
 						items.value = [];
 						lastCreatedQuotation.value = null;

@@ -383,6 +383,13 @@ def create_quotation(quotation_data):
         # Terms and conditions
         if quotation_data.get("tc_name"):
             quotation.tc_name = quotation_data.get("tc_name")
+            # Fetch terms content from Terms and Conditions template
+            try:
+                tc_doc = frappe.get_doc("Terms and Conditions", quotation_data.get("tc_name"))
+                if tc_doc and tc_doc.terms:
+                    quotation.terms = tc_doc.terms
+            except Exception as e:
+                frappe.log_error(f"Error fetching terms and conditions: {str(e)}", "Quotation Form - Terms and Conditions")
         if quotation_data.get("terms"):
             quotation.terms = quotation_data.get("terms")
         
