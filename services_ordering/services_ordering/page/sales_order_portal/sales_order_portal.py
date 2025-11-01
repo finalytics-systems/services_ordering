@@ -690,15 +690,36 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         # Generate Paymob payment link if not already generated
         payment_link = None
         payment_link_html = ""
+        
+        # Clear any existing frappe messages to prevent old error messages from showing
+        frappe.clear_messages()
+        
         try:
-            # Check if payment link already exists
-            if hasattr(sales_order, 'paymob_payment_link') and sales_order.paymob_payment_link:
-                payment_link = sales_order.paymob_payment_link
+            # Check if payment link already exists (reload first to get latest data)
+            sales_order.reload()
+            
+            # Also check database directly in case of caching issues
+            db_payment_link = frappe.db.get_value("Sales Order", sales_order_name, "paymob_payment_link")
+            
+            if (hasattr(sales_order, 'paymob_payment_link') and sales_order.paymob_payment_link) or db_payment_link:
+                payment_link = sales_order.paymob_payment_link or db_payment_link
             else:
                 # Generate new payment link using Paymob API
-                from paymob_integration.paymob_integration.api import PaymobAPI
-                paymob_api = PaymobAPI()
-                payment_link = paymob_api.generate_payment_link(sales_order)
+                try:
+                    payment_link = generate_paymob_payment_link_safe(sales_order, sales_order_name)
+                except frappe.ValidationError:
+                    # Suppress ValidationError from PaymobAPI and check if link was saved anyway
+                    pass
+                
+                # Always reload after generation attempt to check if link was saved
+                sales_order.reload()
+                
+                # If we don't have a payment_link from the function, check if one was saved
+                if not payment_link:
+                    # Check both the document and database directly
+                    doc_link = getattr(sales_order, 'paymob_payment_link', None)
+                    db_link = frappe.db.get_value("Sales Order", sales_order_name, "paymob_payment_link")
+                    payment_link = doc_link or db_link
             
             # Add payment link section to email if link was generated
             if payment_link:
@@ -720,9 +741,39 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
                 </div>
                 """
         except Exception as payment_error:
-            # Log the error but don't fail the email
-            frappe.log_error(f"Failed to generate Paymob payment link: {str(payment_error)}", "Paymob Payment Link Error")
             # Continue sending email without payment link
+            payment_link = None
+            payment_link_html = ""
+            
+            # Check if the payment link was partially saved despite the error
+            try:
+                sales_order.reload()
+                # Check both document and database for payment link
+                doc_link = getattr(sales_order, 'paymob_payment_link', None)
+                db_link = frappe.db.get_value("Sales Order", sales_order_name, "paymob_payment_link")
+                payment_link = doc_link or db_link
+                
+                if payment_link:
+                    # Regenerate the HTML since we found a link
+                    payment_link_html = f"""
+                        <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                            <h3 style="margin-top: 0; color: #856404;">💳 Complete Your Payment</h3>
+                            <p style="color: #856404;">Click the button below to pay securely using Paymob:</p>
+                            <div style="text-align: center; margin: 20px 0;">
+                                <a href="{payment_link}" 
+                                   style="background-color: #28a745; color: white; padding: 15px 40px; 
+                                          text-decoration: none; border-radius: 5px; font-weight: bold;
+                                          display: inline-block; font-size: 16px;">
+                                    Pay Now - {sales_order.currency} {sales_order.grand_total:,.2f}
+                                </a>
+                            </div>
+                            <p style="font-size: 12px; color: #856404; text-align: center;">
+                                Secure payment powered by Paymob | Link expires in 1 hour
+                            </p>
+                        </div>
+                        """
+            except Exception as recovery_error:
+                pass  # Silently continue without payment link
         
         # Prepare email content
         subject = f"Sales Order {sales_order_name} - {sales_order.customer_name}"
@@ -750,7 +801,7 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
                 <p style="margin: 5px 0; color: #666;">Your trusted business partner</p>
             </div>
         </div>
-        """
+        """ 
         
         # Create communication record and send email
         from frappe.core.doctype.communication.email import make
@@ -758,7 +809,7 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         # Simple email sending with proper permissions
         try:
             # Generate PDF
-            pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+            pdf_content = frappe.get_print("Sales Order", sales_order_name, "Everclean SS", as_pdf=True)
             
             # Send email using frappe.sendmail with proper context
             frappe.sendmail(
@@ -776,9 +827,19 @@ def send_sales_order_email(sales_order_name, customer_name=None, customer_email=
         except Exception as email_error:
             raise Exception(f"Email sending failed: {str(email_error)}")
         
+        # Clear any error messages that might have been generated during payment link creation
+        frappe.clear_messages()
+        
+        # Determine the success message based on whether payment link was included
+        if payment_link:
+            message = f"Sales Order PDF with payment link has been sent to {customer_email}"
+        else:
+            message = f"Sales Order PDF has been sent to {customer_email} (payment link not available)"
+            
         return {
             "success": True,
-            "message": f"Sales Order PDF has been sent to {customer_email}"
+            "message": message,
+            "payment_link_included": bool(payment_link)
         }
         
     except Exception as e:
@@ -1129,7 +1190,7 @@ def create_payment_entry(sales_order_name, mode_of_payment, payment_slip_file=No
 
 @frappe.whitelist()
 def download_sales_order_pdf(sales_order_name):
-    """Generate and return Sales Order PDF in SS Order format"""
+    """Generate and return Sales Order PDF in Everclean SS format"""
     try:
         if not sales_order_name:
             return {"success": False, "message": "Sales Order name is required"}
@@ -1140,7 +1201,7 @@ def download_sales_order_pdf(sales_order_name):
         
         # Generate PDF
         import base64
-        pdf_content = frappe.get_print("Sales Order", sales_order_name, "SS Order", as_pdf=True)
+        pdf_content = frappe.get_print("Sales Order", sales_order_name, "Everclean SS", as_pdf=True)
         pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
         
         return {
@@ -1223,3 +1284,53 @@ def get_team_availability(team_name, date=None):
     except Exception as e:
         frappe.log_error(f"Error fetching team availability: {str(e)}", "Sales Order Form - Get Team Availability")
         return {"success": False, "message": str(e)}
+
+def generate_paymob_payment_link_safe(sales_order, sales_order_name):
+    """Safely generate Paymob payment link with proper error handling"""
+    
+    # Store the original paymob_payment_link value to detect if it changes
+    original_link = getattr(sales_order, 'paymob_payment_link', None)
+    
+    try:
+        from paymob_integration.paymob_integration.api import PaymobAPI
+        paymob_api = PaymobAPI()
+        
+        # Try to generate the payment link
+        payment_link = paymob_api.generate_payment_link(sales_order)
+        return payment_link
+        
+    except frappe.ValidationError as ve:
+        # Handle Frappe ValidationError (from frappe.throw) specifically
+        # Check if the payment link was saved despite the validation error
+        try:
+            sales_order.reload()
+            current_link = getattr(sales_order, 'paymob_payment_link', None)
+            
+            # If the link changed from what it was before, the API actually succeeded
+            if current_link and current_link != original_link:
+                return current_link
+            elif current_link:
+                return current_link
+                
+        except Exception as reload_error:
+            pass
+        
+        # Re-raise the ValidationError so it can be caught at the higher level
+        raise ve
+        
+    except Exception as e:
+        # Handle other exceptions
+        try:
+            sales_order.reload()
+            current_link = getattr(sales_order, 'paymob_payment_link', None)
+            
+            if current_link and current_link != original_link:
+                return current_link
+            elif current_link:
+                return current_link
+                
+        except Exception as reload_error:
+            pass
+        
+        # Return None for other exceptions (don't re-raise)
+        return None
