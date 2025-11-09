@@ -244,7 +244,7 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 					const newCustomer = ref({
 						customer_name: '',
 						customer_type: 'Individual',
-						customer_group: 'Sage',
+						customer_group: '',
 						territory: 'Saudi Arabia',
 						mobile_no: '',
 						email_id: '',
@@ -253,6 +253,23 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 						city: '',
 						country: 'Saudi Arabia'
 					});
+					
+					const setDefaultCustomerGroup = () => {
+						if (!customerGroups.value || customerGroups.value.length === 0) {
+							return;
+						}
+						
+						const currentGroup = newCustomer.value.customer_group;
+						const hasExistingGroup = currentGroup && customerGroups.value.some(group => {
+							const groupName = group.name || group.customer_group_name;
+							return groupName === currentGroup;
+						});
+						
+						if (!hasExistingGroup) {
+							const defaultGroup = customerGroups.value.find(group => group.is_default) || customerGroups.value[0];
+							newCustomer.value.customer_group = defaultGroup?.name || defaultGroup?.customer_group_name || '';
+						}
+					};
 					
 					// Team availability viewer
 					const showTeamAvailabilityPopup = ref(false);
@@ -513,6 +530,7 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 					const openCreateCustomerPopup = () => {
 						showCreateCustomerPopup.value = true;
 						showCustomerDropdown.value = false;
+						setDefaultCustomerGroup();
 					};
 					
 					const closeCreateCustomerPopup = () => {
@@ -524,7 +542,7 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 						newCustomer.value = {
 							customer_name: '',
 							customer_type: 'Individual',
-							customer_group: 'Sage',
+							customer_group: '',
 							territory: 'Saudi Arabia',
 							mobile_no: '',
 							email_id: '',
@@ -533,6 +551,7 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 							city: '',
 							country: 'Saudi Arabia'
 						};
+						setDefaultCustomerGroup();
 					};
 					
 					const createNewCustomer = async () => {
@@ -541,6 +560,12 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 							
 							if (!newCustomer.value.customer_name) {
 								showMessage('Customer name is required', true);
+								creatingCustomer.value = false;
+								return;
+							}
+
+							if (!newCustomer.value.customer_group) {
+								showMessage('Customer group is required', true);
 								creatingCustomer.value = false;
 								return;
 							}
@@ -880,6 +905,7 @@ frappe.pages['quotation-portal'].on_page_load = function(wrapper) {
 								itemsList.value = data.items || [];
 								territories.value = data.territories || [];
 								customerGroups.value = data.customer_groups || [];
+								setDefaultCustomerGroup();
 								priceLists.value = data.price_lists || [];
 								cleaningTeams.value = data.cleaning_teams || [];
 								cities.value = data.cities || [];
@@ -1749,13 +1775,26 @@ class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none f
 </div>
 
 <div>
-<label class="block text-sm font-medium text-gray-700 mb-2">Customer Group</label>
-<input 
-type="text"
-v-model="newCustomer.customer_group"
-class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-100 cursor-not-allowed"
-readonly
->
+<label class="block text-sm font-medium text-gray-700 mb-2">Customer Group *</label>
+<select 
+					v-model="newCustomer.customer_group"
+					class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+					>
+<option value="" disabled>Select customer group...</option>
+<option 
+					v-for="group in customerGroups" 
+					:key="group.name || group.customer_group_name" 
+					:value="group.name || group.customer_group_name"
+					>
+{{ group.customer_group_name || group.name }}
+</option>
+</select>
+<p 
+					v-if="customerGroups.length === 0" 
+					class="mt-2 text-xs text-gray-500"
+					>
+No customer groups available. Please configure customer groups in the backend.
+</p>
 </div>
 
 </div>
