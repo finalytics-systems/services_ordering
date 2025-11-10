@@ -264,5 +264,13 @@ fixtures = [
                 "name", "in", ["SS Order", "SS DN", "Everclean SS"]
             ]
         ]
+    },
+    {
+        "dt": "Custom Field",
+        "filters": [
+            [
+                "dt", "in", ["Sales Order", "Delivery Note", "Item", "Sales Order Item", "Delivery Note Item", "Quotation", "Quotation Item"]
+            ]
+        ]
     }
 ]
