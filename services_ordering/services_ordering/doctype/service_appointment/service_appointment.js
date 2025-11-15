@@ -88,6 +88,9 @@ function display_team_availability(frm) {
 
 // Function to render calendar view
 function render_calendar_view(frm, team, appointments) {
+	// Check if document is submitted (read-only mode)
+	const is_submitted = frm.doc.docstatus === 1;
+	
 	// Get team's shifts from child table
 	const shifts = team.shifts || [];
 	
@@ -170,7 +173,8 @@ function render_calendar_view(frm, team, appointments) {
 	
 	// Start building HTML
 	let html = `
-		<div class="team-schedule-container">
+		<div class="team-schedule-container ${is_submitted ? 'read-only-mode' : ''}">
+			${is_submitted ? '<div class="alert alert-info" style="margin: 15px 15px 0 15px;"><strong>📌 Appointment Confirmed:</strong> This appointment has been submitted and can no longer be modified.</div>' : ''}
 			<div class="summary-section">
 				<div class="summary-card team-card">
 					<div class="summary-icon team-icon">👥</div>
@@ -230,7 +234,7 @@ function render_calendar_view(frm, team, appointments) {
 					<div class="header-right">
 						<div class="date-selector-container">
 							<label class="date-label">📆 Select Date</label>
-							<input type="date" class="date-picker" value="${date_yyyy_mm_dd}">
+							<input type="date" class="date-picker" value="${date_yyyy_mm_dd}" ${is_submitted ? 'disabled' : ''}>
 						</div>
 					</div>
 				</div>
@@ -294,7 +298,7 @@ function render_calendar_view(frm, team, appointments) {
 			const slot_range = can_accommodate ? `${hour}-${end_hour_for_booking - 1}` : '';
 			
 			html += `
-				<div class="time-slot ${final_slot_class} ${is_current_selection}" 
+				<div class="time-slot ${final_slot_class} ${is_current_selection} ${is_submitted ? 'slot-disabled' : ''}" 
 					 data-hour="${hour}" 
 					 data-service-duration="${service_duration}"
 					 data-slot-range="${slot_range}">
@@ -308,7 +312,7 @@ function render_calendar_view(frm, team, appointments) {
 					${service_duration > 1 && can_accommodate ? `<div class="duration-info">Will book: ${format_time(hour + ':00')} - ${format_time(end_hour_for_booking + ':00')} (${service_duration} hours)</div>` : ''}
 					${service_duration > 1 && !can_accommodate ? `<div class="duration-info">Duration: ${service_duration} hour(s)</div>` : ''}
 					${is_booked ? get_appointment_details(appointments, hour, selected_date) : ''}
-					${!is_booked && can_accommodate ? '<div class="book-now-prompt">Available for booking</div>' : ''}
+					${!is_booked && can_accommodate && !is_submitted ? '<div class="book-now-prompt">Available for booking</div>' : ''}
 				</div>
 			`;
 		}
@@ -816,40 +820,64 @@ function render_calendar_view(frm, team, appointments) {
 			.time-slot.available:hover .status-circle {
 				animation: pulse 1.5s infinite;
 			}
+			
+			/* Read-only mode styles */
+			.team-schedule-container.read-only-mode .time-slot {
+				cursor: default;
+				pointer-events: none;
+			}
+			
+			.time-slot.slot-disabled {
+				cursor: not-allowed !important;
+				opacity: 0.8;
+			}
+			
+			.team-schedule-container.read-only-mode .time-slot:hover {
+				transform: none;
+				box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+			}
+			
+			.date-picker:disabled {
+				cursor: not-allowed;
+				opacity: 0.6;
+				background-color: #e9ecef;
+			}
 		</style>
 	`;
 	
 	frm.fields_dict.team_availability.$wrapper.html(html);
 	
-	// Add hover handler for available time slots to show preview (exclude break slots)
-	frm.fields_dict.team_availability.$wrapper.find('.time-slot.available:not(.break-slot)').on('mouseenter', function() {
-		const start_hour = $(this).data('hour');
-		const service_duration = $(this).data('service-duration');
-		highlightSlotGroup(frm, start_hour, service_duration, 'preview');
-	}).on('mouseleave', function() {
-		clearSlotGroupHighlight(frm);
-	});
-	
-	// Add click handler for available time slots (exclude break slots)
-	frm.fields_dict.team_availability.$wrapper.find('.time-slot.available:not(.break-slot)').on('click', function() {
-		const selected_hour = $(this).data('hour');
-		const service_duration = frm.doc.total_service_time || 1;
+	// Only add event handlers if document is not submitted
+	if (!is_submitted) {
+		// Add hover handler for available time slots to show preview (exclude break slots)
+		frm.fields_dict.team_availability.$wrapper.find('.time-slot.available:not(.break-slot)').on('mouseenter', function() {
+			const start_hour = $(this).data('hour');
+			const service_duration = $(this).data('service-duration');
+			highlightSlotGroup(frm, start_hour, service_duration, 'preview');
+		}).on('mouseleave', function() {
+			clearSlotGroupHighlight(frm);
+		});
 		
-		// Clear previous selections
-		frm.fields_dict.team_availability.$wrapper.find('.time-slot').removeClass('selected slot-group-start slot-group-middle slot-group-end slot-group-single slot-group-preview');
+		// Add click handler for available time slots (exclude break slots)
+		frm.fields_dict.team_availability.$wrapper.find('.time-slot.available:not(.break-slot)').on('click', function() {
+			const selected_hour = $(this).data('hour');
+			const service_duration = frm.doc.total_service_time || 1;
+			
+			// Clear previous selections
+			frm.fields_dict.team_availability.$wrapper.find('.time-slot').removeClass('selected slot-group-start slot-group-middle slot-group-end slot-group-single slot-group-preview');
+			
+			// Get shifts for highlighting
+			const shifts = team.shifts || [];
+			
+			// Highlight the selected slot group
+			highlightSlotGroup(frm, selected_hour, service_duration, 'selected');
+			
+			// Update the appointment time
+			updateAppointmentDateTime(frm, selected_date, selected_hour, service_duration);
+		});
 		
-		// Get shifts for highlighting
-		const shifts = team.shifts || [];
-		
-		// Highlight the selected slot group
-		highlightSlotGroup(frm, selected_hour, service_duration, 'selected');
-		
-		// Update the appointment time
-		updateAppointmentDateTime(frm, selected_date, selected_hour, service_duration);
-	});
-	
-	// Add date picker change handler
-	frm.fields_dict.team_availability.$wrapper.find('.date-picker').on('change', function() {
+		// Add date picker change handler
+		frm.fields_dict.team_availability.$wrapper.find('.date-picker').on('change', function() {
 		const selected_date_str = $(this).val();
 		if (selected_date_str) {
 			// Create date object from selected date
@@ -878,7 +906,8 @@ function render_calendar_view(frm, team, appointments) {
 			// Refresh the calendar view with new date
 			display_team_availability(frm);
 		}
-	});
+		});
+	}
 }
 
 // Function to update appointment date time
