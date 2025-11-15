@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - اتصل بنا</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .form-header h1 .arabic {
+            font-size: 28px;
+            display: block;
+            margin-top: 5px;
+            color: #555;
+        }
+
+        .form-header p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .form-header p .arabic {
+            display: block;
+            margin-top: 5px;
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group label .arabic {
+            float: right;
+            font-weight: 600;
+        }
+
+        .form-group label .required {
+            color: #e74c3c;
+            margin-left: 3px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background-color: white;
+        }
+
+        .form-group .searchable-select-wrapper {
+            position: relative;
+        }
+
+        .form-group .searchable-select {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .form-group .searchable-select input {
+            cursor: pointer;
+            padding-right: 35px;
+        }
+
+        .form-group .searchable-select .dropdown-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #666;
+            transition: transform 0.3s ease;
+        }
+
+        .form-group .searchable-select.active .dropdown-icon {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-list.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9ff;
+        }
+
+        .dropdown-item.selected {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .dropdown-item .item-english {
+            display: block;
+            font-weight: 500;
+        }
+
+        .dropdown-item .item-arabic {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            margin-top: 2px;
+            text-align: right;
+        }
+
+        .dropdown-item.selected .item-arabic {
+            color: #e0e0e0;
+        }
+
+        .dropdown-item.hidden {
+            display: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-group input.error,
+        .form-group select.error,
+        .form-group textarea.error {
+            border-color: #e74c3c;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .captcha-container {
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .captcha-error {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 8px;
+            text-align: center;
+            display: none;
+        }
+
+        .captcha-error.show {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            .form-header h1 {
+                font-size: 26px;
+            }
+
+            .captcha-container {
+                transform: scale(0.9);
+                transform-origin: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-header">
+            <h1>
+                Contact Us
+                <span class="arabic">اتصل بنا</span>
+            </h1>
+            <p>
+                We'd love to hear from you. Fill out the form below and we'll get back to you soon.
+                <span class="arabic">نحن نحب أن نسمع منك. املأ النموذج أدناه وسنعود إليك قريباً</span>
+            </p>
+        </div>
+
+        <div id="alertMessage" class="alert"></div>
+
+        <form id="contactForm" method="POST">
+            <div class="form-group">
+                <label for="full_name">
+                    Full Name<span class="required">*</span>
+                    <span class="arabic">الاسم الكامل<span class="required">*</span></span>
+                </label>
+                <input type="text" id="full_name" name="full_name" placeholder="Enter your full name / أدخل اسمك الكامل" required>
+                <div class="error-message" id="full_name_error">Please enter your full name / الرجاء إدخال الاسم الكامل</div>
+            </div>
+
+            <div class="form-group">
+                <label for="mobile_number">
+                    Mobile Number<span class="required">*</span>
+                    <span class="arabic">رقم الجوال<span class="required">*</span></span>
+                </label>
+                <input type="tel" id="mobile_number" name="mobile_number" placeholder="+966 5X XXX XXXX" required maxlength="17">
+                <div class="error-message" id="mobile_number_error">Please enter a valid Saudi mobile number (+966 5X XXX XXXX) / الرجاء إدخال رقم جوال سعودي صحيح</div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">
+                    Email
+                    <span class="arabic">البريد الإلكتروني</span>
+                </label>
+                <input type="email" id="email" name="email" placeholder="your.email@example.com / بريدك الإلكتروني">
+                <div class="error-message" id="email_error">Please enter a valid email address / الرجاء إدخال بريد إلكتروني صحيح</div>
+            </div>
+
+            <div class="form-group">
+                <label for="city_display">
+                    City
+                    <span class="arabic">المدينة</span>
+                </label>
+                <div class="searchable-select-wrapper">
+                    <div class="searchable-select" id="city_select">
+                        <input type="text" id="city_display" placeholder="Search city / ابحث عن المدينة" autocomplete="off">
+                        <span class="dropdown-icon">▼</span>
+                        <div class="dropdown-list" id="city_dropdown"></div>
+                    </div>
+                    <input type="hidden" id="city" name="city" value="">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="district_display">
+                    District / Neighborhood
+                    <span class="arabic">الحي / المنطقة</span>
+                </label>
+                <div class="searchable-select-wrapper">
+                    <div class="searchable-select" id="district_select">
+                        <input type="text" id="district_display" placeholder="Search district / ابحث عن الحي" autocomplete="off">
+                        <span class="dropdown-icon">▼</span>
+                        <div class="dropdown-list" id="district_dropdown"></div>
+                    </div>
+                    <input type="hidden" id="district" name="district" value="">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="query">
+                    Query / Description
+                    <span class="arabic">الاستفسار / الوصف</span>
+                </label>
+                <textarea id="query" name="query" placeholder="Please describe your query or message... / يرجى وصف استفسارك أو رسالتك..."></textarea>
+            </div>
+
+            <div class="captcha-container">
+                <div class="g-recaptcha" data-sitekey="6Lfstu8rAAAAAB8Dkl67_QDVFarvYK4W_ITn5frO" data-callback="recaptchaCallback"></div>
+            </div>
+            <div class="captcha-error" id="captcha_error">Please verify that you are not a robot / يرجى التحقق من أنك لست روبوتاً</div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Submit / إرسال
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Cities data with Arabic names
+        const cities = [
+            { en: "Riyadh", ar: "الرياض" },
+            { en: "Jeddah", ar: "جدة" },
+            { en: "Mecca", ar: "مكة المكرمة" },
+            { en: "Medina", ar: "المدينة المنورة" },
+            { en: "Dammam", ar: "الدمام" },
+            { en: "Khobar", ar: "الخبر" },
+            { en: "Dhahran", ar: "الظهران" },
+            { en: "Taif", ar: "الطائف" },
+            { en: "Buraidah", ar: "بريدة" },
+            { en: "Tabuk", ar: "تبوك" },
+            { en: "Khamis Mushait", ar: "خميس مشيط" },
+            { en: "Hail", ar: "حائل" },
+            { en: "Hofuf", ar: "الهفوف" },
+            { en: "Jubail", ar: "الجبيل" },
+            { en: "Hafr Al-Batin", ar: "حفر الباطن" },
+            { en: "Yanbu", ar: "ينبع" },
+            { en: "Abha", ar: "أبها" },
+            { en: "Najran", ar: "نجران" },
+            { en: "Qatif", ar: "القطيف" },
+            { en: "Arar", ar: "عرعر" }
+        ];
+
+        // Districts data with Arabic names
+        const districts = [
+            { en: "Al Olaya", ar: "العليا" },
+            { en: "Al Malaz", ar: "الملز" },
+            { en: "Al Naseem", ar: "النسيم" },
+            { en: "Al Muruj", ar: "المروج" },
+            { en: "Al Nakheel", ar: "النخيل" },
+            { en: "Al Worood", ar: "الورود" },
+            { en: "Al Yasmin", ar: "الياسمين" },
+            { en: "Al Sulimaniyah", ar: "السليمانية" },
+            { en: "Granada", ar: "غرناطة" },
+            { en: "Hittin", ar: "حطين" },
+            { en: "King Fahd", ar: "الملك فهد" },
+            { en: "Al Hamra", ar: "الحمراء" },
+            { en: "Al Rawdah", ar: "الروضة" },
+            { en: "Al Sahafa", ar: "الصحافة" },
+            { en: "Al Aqiq", ar: "العقيق" },
+            { en: "Al Nahdah", ar: "النهضة" },
+            { en: "Al Nuzha", ar: "النزهة" },
+            { en: "Al Aziziyah", ar: "العزيزية" },
+            { en: "Diplomatic Quarter", ar: "الحي الدبلوماسي" },
+            { en: "Al Riyan", ar: "الريان" },
+            { en: "Al Arid", ar: "العارض" },
+            { en: "Al Faisaliyah", ar: "الفيصلية" },
+            { en: "Al Mursalat", ar: "المرسلات" },
+            { en: "Al Narjis", ar: "النرجس" },
+            { en: "Al Rabie", ar: "الربيع" },
+            { en: "Al Safarat", ar: "السفارات" },
+            { en: "Al Shifa", ar: "الشفا" },
+            { en: "Al Wadi", ar: "الوادي" },
+            { en: "Ishbiliyah", ar: "إشبيلية" },
+            { en: "Qurtubah", ar: "قرطبة" }
+        ];
+
+        // Initialize searchable dropdowns
+        function initSearchableDropdown(config) {
+            const displayInput = document.getElementById(config.displayId);
+            const hiddenInput = document.getElementById(config.hiddenId);
+            const dropdown = document.getElementById(config.dropdownId);
+            const selectWrapper = document.getElementById(config.selectId);
+
+            // Populate dropdown
+            dropdown.innerHTML = config.data.map(item => `
+                <div class="dropdown-item" data-value="${item.en}">
+                    <span class="item-english">${item.en}</span>
+                    <span class="item-arabic">${item.ar}</span>
+                </div>
+            `).join('');
+
+            // Set default value if provided
+            if (config.defaultValue) {
+                const defaultItem = config.data.find(item => item.en === config.defaultValue);
+                if (defaultItem) {
+                    displayInput.value = `${defaultItem.en} - ${defaultItem.ar}`;
+                    hiddenInput.value = defaultItem.en;
+                }
+            }
+
+            // Show dropdown on click
+            displayInput.addEventListener('click', function() {
+                dropdown.classList.add('show');
+                selectWrapper.classList.add('active');
+                displayInput.select();
+            });
+
+            // Filter dropdown on input
+            displayInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const items = dropdown.querySelectorAll('.dropdown-item');
+                
+                items.forEach(item => {
+                    const english = item.querySelector('.item-english').textContent.toLowerCase();
+                    const arabic = item.querySelector('.item-arabic').textContent;
+                    
+                    if (english.includes(searchTerm) || arabic.includes(searchTerm)) {
+                        item.classList.remove('hidden');
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+
+                dropdown.classList.add('show');
+                selectWrapper.classList.add('active');
+            });
+
+            // Select item on click
+            dropdown.addEventListener('click', function(e) {
+                const item = e.target.closest('.dropdown-item');
+                if (item) {
+                    const value = item.dataset.value;
+                    const dataItem = config.data.find(d => d.en === value);
+                    
+                    displayInput.value = `${dataItem.en} - ${dataItem.ar}`;
+                    hiddenInput.value = dataItem.en;
+                    
+                    dropdown.classList.remove('show');
+                    selectWrapper.classList.remove('active');
+                    
+                    // Remove previous selection
+                    dropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!selectWrapper.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                    selectWrapper.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize city dropdown
+        initSearchableDropdown({
+            displayId: 'city_display',
+            hiddenId: 'city',
+            dropdownId: 'city_dropdown',
+            selectId: 'city_select',
+            data: cities,
+            defaultValue: 'Riyadh'
+        });
+
+        // Initialize district dropdown
+        initSearchableDropdown({
+            displayId: 'district_display',
+            hiddenId: 'district',
+            dropdownId: 'district_dropdown',
+            selectId: 'district_select',
+            data: districts
+        });
+
+        // Mobile number formatting and validation
+        const mobileInput = document.getElementById('mobile_number');
+        
+        // Auto-format mobile number
+        mobileInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            
+            // If user starts typing without +966, add it
+            if (value.length > 0 && !e.target.value.startsWith('+966')) {
+                // Check if they're trying to enter Saudi number (starts with 5 or 966)
+                if (value.startsWith('966')) {
+                    value = value.substring(3);
+                } else if (value.startsWith('5')) {
+                    // Already starts with 5, good
+                } else if (value.startsWith('0') && value.length > 1 && value[1] === '5') {
+                    // Remove leading 0 if present (common in local format)
+                    value = value.substring(1);
+                }
+            } else if (value.startsWith('966')) {
+                value = value.substring(3);
+            }
+            
+            // Limit to 9 digits after country code (Saudi mobile format)
+            if (value.length > 9) {
+                value = value.substring(0, 9);
+            }
+            
+            // Format the number
+            let formattedValue = '+966';
+            if (value.length > 0) {
+                formattedValue += ' ' + value.substring(0, 2); // First 2 digits (5X)
+                if (value.length > 2) {
+                    formattedValue += ' ' + value.substring(2, 5); // Next 3 digits
+                }
+                if (value.length > 5) {
+                    formattedValue += ' ' + value.substring(5, 9); // Last 4 digits
+                }
+            }
+            
+            e.target.value = formattedValue;
+        });
+        
+        // Prevent deletion of +966 prefix
+        mobileInput.addEventListener('keydown', function(e) {
+            const cursorPosition = e.target.selectionStart;
+            
+            // Prevent backspace/delete if trying to remove +966
+            if ((e.key === 'Backspace' || e.key === 'Delete') && cursorPosition <= 4) {
+                e.preventDefault();
+            }
+        });
+        
+        // Set initial +966 when field is focused and empty
+        mobileInput.addEventListener('focus', function(e) {
+            if (e.target.value === '') {
+                e.target.value = '+966 ';
+            }
+        });
+        
+        // Validate Saudi mobile number format
+        function isValidSaudiMobile(number) {
+            // Remove spaces and check format
+            const cleaned = number.replace(/\s/g, '');
+            
+            // Must start with +966 and have 9 more digits starting with 5
+            const saudiMobileRegex = /^\+9665[0-9]{8}$/;
+            return saudiMobileRegex.test(cleaned);
+        }
+
+        const form = document.getElementById('contactForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const alertMessage = document.getElementById('alertMessage');
+
+        // Form validation
+        function validateForm() {
+            let isValid = true;
+
+            // Full Name validation
+            const fullName = document.getElementById('full_name');
+            const fullNameError = document.getElementById('full_name_error');
+            if (fullName.value.trim() === '') {
+                fullName.classList.add('error');
+                fullNameError.classList.add('show');
+                isValid = false;
+            } else {
+                fullName.classList.remove('error');
+                fullNameError.classList.remove('show');
+            }
+
+            // Mobile Number validation
+            const mobileNumber = document.getElementById('mobile_number');
+            const mobileNumberError = document.getElementById('mobile_number_error');
+            if (mobileNumber.value.trim() === '' || !isValidSaudiMobile(mobileNumber.value)) {
+                mobileNumber.classList.add('error');
+                mobileNumberError.classList.add('show');
+                isValid = false;
+            } else {
+                mobileNumber.classList.remove('error');
+                mobileNumberError.classList.remove('show');
+            }
+
+            // Email validation (only if provided)
+            const email = document.getElementById('email');
+            const emailError = document.getElementById('email_error');
+            if (email.value.trim() !== '') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email.value)) {
+                    email.classList.add('error');
+                    emailError.classList.add('show');
+                    isValid = false;
+                } else {
+                    email.classList.remove('error');
+                    emailError.classList.remove('show');
+                }
+            } else {
+                email.classList.remove('error');
+                emailError.classList.remove('show');
+            }
+
+            // reCAPTCHA validation
+            const captchaResponse = grecaptcha.getResponse();
+            const captchaError = document.getElementById('captcha_error');
+            if (!captchaResponse || captchaResponse.length === 0) {
+                captchaError.classList.add('show');
+                isValid = false;
+            } else {
+                captchaError.classList.remove('show');
+            }
+
+            return isValid;
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            alertMessage.textContent = message;
+            alertMessage.className = 'alert show alert-' + type;
+            alertMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Hide alert message
+        function hideAlert() {
+            alertMessage.classList.remove('show');
+        }
+
+        // Form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideAlert();
+
+            if (!validateForm()) {
+                showAlert('Please fill in all required fields correctly. / الرجاء ملء جميع الحقول المطلوبة بشكل صحيح', 'error');
+                return;
+            }
+
+            // Disable submit button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span>Submitting... / جاري الإرسال...';
+
+            const formData = new FormData(form);
+            const captchaResponse = grecaptcha.getResponse();
+            
+            const data = {
+                full_name: formData.get('full_name'),
+                mobile_number: formData.get('mobile_number'),
+                email: formData.get('email'),
+                city: document.getElementById('city').value,
+                district: document.getElementById('district').value,
+                query: formData.get('query'),
+                captcha_response: captchaResponse
+            };
+
+            try {
+                const response = await fetch('/api/method/services_ordering.www.contact_us.submit_contact_form', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Frappe-CSRF-Token': frappe.csrf_token
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.message && result.message.success) {
+                    showAlert('Thank you for contacting us! We will get back to you soon. / شكراً لتواصلك معنا! سنعود إليك قريباً', 'success');
+                    form.reset();
+                    // Reset city to default
+                    const defaultCity = cities.find(c => c.en === 'Riyadh');
+                    document.getElementById('city_display').value = `${defaultCity.en} - ${defaultCity.ar}`;
+                    document.getElementById('city').value = defaultCity.en;
+                    document.getElementById('district_display').value = '';
+                    document.getElementById('district').value = '';
+                    // Reset reCAPTCHA
+                    grecaptcha.reset();
+                } else {
+                    showAlert(result.message?.error || 'An error occurred. Please try again. / حدث خطأ. يرجى المحاولة مرة أخرى', 'error');
+                    // Reset reCAPTCHA on error
+                    grecaptcha.reset();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('An error occurred. Please try again later. / حدث خطأ. يرجى المحاولة مرة أخرى لاحقاً', 'error');
+                // Reset reCAPTCHA on error
+                grecaptcha.reset();
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Submit / إرسال';
+            }
+        });
+
+        // Remove error styling on input
+        const inputs = form.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"], textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('error');
+                const errorElement = document.getElementById(this.id + '_error');
+                if (errorElement) {
+                    errorElement.classList.remove('show');
+                }
+            });
+        });
+
+        // Hide captcha error when user completes the captcha
+        window.recaptchaCallback = function() {
+            document.getElementById('captcha_error').classList.remove('show');
+        };
+    </script>
+</body>
+</html>
