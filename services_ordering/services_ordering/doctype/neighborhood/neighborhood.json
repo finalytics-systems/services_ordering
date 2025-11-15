@@ -1,0 +1,54 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:neighborhood",
+ "creation": "2025-10-01 10:37:11.317406",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "neighborhood",
+  "city"
+ ],
+ "fields": [
+  {
+   "fieldname": "neighborhood",
+   "fieldtype": "Data",
+   "label": "Neighborhood",
+   "unique": 1
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Link",
+   "label": "City",
+   "options": "City"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-11-15 14:05:46.191287",
+ "modified_by": "Administrator",
+ "module": "Services Ordering",
+ "name": "Neighborhood",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
